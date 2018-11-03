@@ -33,22 +33,16 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 
-buildscript {
-    repositories {
-        jcenter()
-    }
-    dependencies {
-        classpath 'com.novoda:bintray-release:0.8.1'
-    }
+// ./gradlew clean build bintrayUpload -PbintrayUser=xxx -PbintrayKey=xxx -PdryRun=false
+apply plugin: "guru.stefma.bintrayrelease"
+version = "1.0.0"
+group = "com.sch.share"
+androidArtifact {
+    artifactId = "wx-share"
 }
-
-apply plugin: 'com.novoda.bintray-release'
-
 publish {
     userOrg = 'shichaohui'
-    groupId = 'com.sch.share'
-    artifactId = 'wx-share'
-    publishVersion = '1.0.0'
     desc = '微信分享多图'
     website = 'https://github.com/shichaohui/WXShareMultiImage.git'
 }
+tasks.getByPath(":wx-share:dokka").enabled = false
