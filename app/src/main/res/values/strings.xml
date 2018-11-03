@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ShareDemo</string>
+    <string name="wx_share_multi_image_service_label">ShareDemo【多图分享】</string>
+</resources>
