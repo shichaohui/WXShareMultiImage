@@ -7,9 +7,9 @@
 * 分享多图+文字给好友。
 * 分享多图+文字到朋友圈。
 
-[下载Demo](./readmeFiles/demo.apk)
+[下载Demo](./demo.apk)
 
-[观看演示视频](./readmeFiles/demo.mp4)
+[观看演示视频](http://seafile.meimeifa.com:8000/f/bfaa286abf/?raw=1)
 
 ## Gradle 依赖
 
@@ -28,7 +28,7 @@ implementation 'com.sch.share:wx-share:1.0.0'
 
 [查看所有 API 。](./wx-share/src/main/java/com/sch/share/WXShareMultiImageHelper.kt)
 
-![API](./readmeFiles/api.png)
+![API](./api.png)
 
 ## 用法：
 
