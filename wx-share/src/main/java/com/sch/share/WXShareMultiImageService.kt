@@ -21,6 +21,12 @@ class WXShareMultiImageService : AccessibilityService() {
     private val snsUploadUI by lazy { "com.tencent.mm.plugin.sns.ui.SnsUploadUI" }
     private val albumPreviewUI by lazy { "com.tencent.mm.plugin.gallery.ui.AlbumPreviewUI" }
 
+    private val selectFromAlbumZh by lazy { "从相册选择" }
+    private val selectFromAlbumEn by lazy { "Select Photos or Videos from Album" }
+
+    private val doneZh by lazy { "完成" }
+    private val doneEn by lazy { "Done" }
+
     private var prevSource: AccessibilityNodeInfo? = null
     private var prevListView: AccessibilityNodeInfo? = null
 
@@ -88,8 +94,10 @@ class WXShareMultiImageService : AccessibilityService() {
         }
         prevListView = listView
 
-        listView.findAccessibilityNodeInfosByText("从相册选择")
-                ?.get(0)
+        listView.findAccessibilityNodeInfosByText(selectFromAlbumZh)
+                .getOrElse(0) {
+                    listView.findAccessibilityNodeInfosByText(selectFromAlbumEn).getOrNull(0)
+                }
                 ?.parent
                 ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
@@ -104,8 +112,10 @@ class WXShareMultiImageService : AccessibilityService() {
             findNodeInfo(gridView.getChild(i), View::class.java.name)
                     ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
         }
-        rootInActiveWindow.findAccessibilityNodeInfosByText("完成")
-                ?.get(0)
+        rootInActiveWindow.findAccessibilityNodeInfosByText(doneZh)
+                .getOrElse(0) {
+                    rootInActiveWindow.findAccessibilityNodeInfosByText(doneEn).getOrNull(0)
+                }
                 ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
         isSelected = true
         ShareInfo.setImageCount(0, 0)
