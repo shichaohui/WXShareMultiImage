@@ -24,6 +24,14 @@ implementation 'com.sch.share:wx-share:1.0.1'
 <string name="wx_share_multi_image_service_label">ShareDemo【多图分享】</string>
 ```
 
+## 权限
+
+由于 SDK 涉及文件操作，请添加相关权限。
+```
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+```
+
 ## API
 
 [查看所有 API 。](./wx-share/src/main/java/com/sch/share/WXShareMultiImageHelper.kt)
@@ -31,14 +39,6 @@ implementation 'com.sch.share:wx-share:1.0.1'
 ![API](./api.png)
 
 ## 用法：
-
-### 权限
-
-由于 SDK 涉及文件操作，请添加相关权限。
-```
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-```
 
 ### 分享给好友
 
