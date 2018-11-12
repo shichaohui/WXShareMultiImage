@@ -181,8 +181,7 @@ object WXShareMultiImageHelper {
                 return@runOnUiThread
             }
 
-            ShareInfo.setManual(isAuto)
-
+            ShareInfo.setAuto(isAuto)
             if (!TextUtils.isEmpty(text)) {
                 ClipboardUtil.setPrimaryClip(activity, "", text)
             }
@@ -196,6 +195,8 @@ object WXShareMultiImageHelper {
                 if (isAuto) {
                     // 因为第一张由微信 API 带进去，所以不需要自动选择。
                     ShareInfo.setImageCount(1, imageList.size - 1)
+
+                    ShareInfo.setText(text)
                 }
 
                 clearTmpFile(activity)
