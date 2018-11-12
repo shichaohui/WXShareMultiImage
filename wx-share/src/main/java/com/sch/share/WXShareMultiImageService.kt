@@ -72,11 +72,6 @@ class WXShareMultiImageService : AccessibilityService() {
 
     // 显示待分享文字。
     private fun setTextToUI() {
-        println("------> "+!ShareInfo.hasText())
-        println("------>> "+ClipboardUtil.getPrimaryClip(this))
-        println("------>> "+ShareInfo.getText())
-        println("------>> "+ClipboardUtil.getPrimaryClip(this) != ShareInfo.getText())
-        println("------>> "+(!ShareInfo.hasText() || ClipboardUtil.getPrimaryClip(this) != ShareInfo.getText()))
         if (!ShareInfo.hasText() || ClipboardUtil.getPrimaryClip(this) != ShareInfo.getText()) {
             return
         }
