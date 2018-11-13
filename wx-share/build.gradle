@@ -8,7 +8,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 28
         versionCode 1
-        versionName "1.0.1"
+        versionName "1.0.2"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -33,9 +33,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 
-// ./gradlew clean build bintrayUpload -PbintrayUser=xxx -PbintrayKey=xxx -PdryRun=false
+// ./gradlew clean build bintrayUpload -PbintrayUser=shichaohui -PbintrayKey=xxx -PdryRun=false
 apply plugin: "guru.stefma.bintrayrelease"
-version = "1.0.1"
+version = "1.0.2"
 group = "com.sch.share"
 androidArtifact {
     artifactId = "wx-share"
