@@ -133,16 +133,16 @@ object WXShareMultiImageHelper {
                     internalShareToTimeline(activity, text, imageList, false)
                 }
                 WXShareMultiImageHelper.isServiceEnabled(activity) -> {
-                    internalShareToTimeline(activity, text, imageList, isAuto)
+                    internalShareToTimeline(activity, text, imageList, true)
                 }
                 else -> {
                     showOpenServiceDialog(activity,
                             {
                                 WXShareMultiImageHelper.openService(activity) {
-                                    internalShareToTimeline(activity, text, imageList, isAuto)
+                                    internalShareToTimeline(activity, text, imageList, it)
                                 }
                             },
-                            { internalShareToTimeline(activity, text, imageList, isAuto) })
+                            { internalShareToTimeline(activity, text, imageList, false) })
                 }
             }
         }
@@ -211,11 +211,16 @@ object WXShareMultiImageHelper {
                 }
 
                 activity.runOnUiThread {
-                    openShareUI(activity, text, uriList.takeLast(1), SHARE_TO_TIMELINE_UI)
-                    // 文字提示。
-                    if (!isAuto || !WXShareMultiImageHelper.isServiceEnabled(activity)) {
+                    // 打开分享
+                    if (getWXVersionCode(activity) < WX_V673) {
+                        openShareUI(activity, text, uriList.reversed(), SHARE_TO_TIMELINE_UI)
+                    } else {
+                        openShareUI(activity, text, uriList.takeLast(1), SHARE_TO_TIMELINE_UI)
+                    }
+                    if (!isAuto) {
+                        // 文字提示。
                         val stringBuilder = StringBuilder(if (TextUtils.isEmpty(text)) "" else "长按粘贴文字")
-                        if (imageList.isNotEmpty()) {
+                        if (imageList.isNotEmpty() && getWXVersionCode(activity) >= WX_V673) {
                             stringBuilder.append(if (stringBuilder.isEmpty()) "" else "，")
                             stringBuilder.append("点击加号添加剩余图片")
                         }
