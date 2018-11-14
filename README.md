@@ -2,6 +2,8 @@
 
 基于无障碍服务实现微信多图分享。
 
+[ ![Download](https://api.bintray.com/packages/shichaohui/maven/wx-share/images/download.svg) ](https://bintray.com/shichaohui/maven/wx-share/_latestVersion)
+
 ## 功能
 
 * 分享多图+文字给好友。
@@ -14,7 +16,7 @@
 ## Gradle 依赖
 
 ```groovy
-implementation 'com.sch.share:wx-share:1.0.2'
+implementation 'com.sch.share:wx-share:1.0.3'
 ```
 
 ## 配置
