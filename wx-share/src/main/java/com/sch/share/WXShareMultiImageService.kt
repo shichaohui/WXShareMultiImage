@@ -1,10 +1,10 @@
 package com.sch.share
 
 import android.accessibilityservice.AccessibilityService
-import android.os.Build
 import android.view.View
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.EditText
 import android.widget.GridView
 import android.widget.ListView
@@ -20,9 +20,6 @@ class WXShareMultiImageService : AccessibilityService() {
 
     private val snsUploadUI by lazy { "com.tencent.mm.plugin.sns.ui.SnsUploadUI" }
     private val albumPreviewUI by lazy { "com.tencent.mm.plugin.gallery.ui.AlbumPreviewUI" }
-
-    private val selectFromAlbumZh by lazy { "从相册选择" }
-    private val selectFromAlbumEn by lazy { "Select Photos or Videos from Album" }
 
     private val doneZh by lazy { "完成" }
     private val doneEn by lazy { "Done" }
@@ -61,29 +58,27 @@ class WXShareMultiImageService : AccessibilityService() {
         }
         prevSource = event.source
 
-        setTextToUI()
+        val rootNodeInfo = getRootNodeInfo() ?: return
+
+        setTextToUI(rootNodeInfo)
 
         // 自动点击添加图片的 + 号按钮。
         if (ShareInfo.getWaitingImageCount() > 0) {
-            val gridView = findNodeInfo(rootInActiveWindow, GridView::class.java.name)
+            val gridView = findNodeInfo(rootNodeInfo, GridView::class.java.name)
             gridView?.getChild(gridView.childCount - 1)?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
         }
     }
 
     // 显示待分享文字。
-    private fun setTextToUI() {
+    private fun setTextToUI(rootNodeInfo: AccessibilityNodeInfo) {
         if (!ShareInfo.hasText() || ClipboardUtil.getPrimaryClip(this) != ShareInfo.getText()) {
             return
         }
         // 设置待分享文字。
-        val editText = findNodeInfo(rootInActiveWindow, EditText::class.java.name)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            // 粘贴剪切板内容
-            editText?.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
-            editText?.performAction(AccessibilityNodeInfo.ACTION_PASTE)
-        } else {
-            editText?.text = ClipboardUtil.getPrimaryClip(this)
-        }
+        val editText = findNodeInfo(rootNodeInfo, EditText::class.java.name)
+        // 粘贴剪切板内容
+        editText?.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+        editText?.performAction(AccessibilityNodeInfo.ACTION_PASTE)
     }
 
     // 打开相册。
@@ -98,12 +93,7 @@ class WXShareMultiImageService : AccessibilityService() {
         }
         prevListView = listView
 
-        listView.findAccessibilityNodeInfosByText(selectFromAlbumZh)
-                .getOrElse(0) {
-                    listView.findAccessibilityNodeInfosByText(selectFromAlbumEn).getOrNull(0)
-                }
-                ?.parent
-                ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        listView.getChild(listView.childCount - 1).performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
     // 选择图片。
@@ -111,16 +101,17 @@ class WXShareMultiImageService : AccessibilityService() {
         if (ShareInfo.getWaitingImageCount() <= 0) {
             return
         }
-        val gridView = findNodeInfo(rootInActiveWindow, GridView::class.java.name) ?: return
-        for (i in ShareInfo.getSelectedImageCount()..ShareInfo.getWaitingImageCount()) {
-            findNodeInfo(gridView.getChild(i), View::class.java.name)
-                    ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-        }
-        rootInActiveWindow.findAccessibilityNodeInfosByText(doneZh)
-                .getOrElse(0) {
-                    rootInActiveWindow.findAccessibilityNodeInfosByText(doneEn).getOrNull(0)
-                }
+        val rootNodeInfo = getRootNodeInfo() ?: return
+        val gridView = findNodeInfo(rootNodeInfo, GridView::class.java.name) ?: return
+
+        (ShareInfo.getSelectedImageCount()..ShareInfo.getWaitingImageCount())
+                .map { findNodeInfo(gridView.getChild(it), View::class.java.name) }
+                .forEach { it?.performAction(AccessibilityNodeInfo.ACTION_CLICK) }
+
+        rootNodeInfo?.findAccessibilityNodeInfosByText(doneZh)
+                ?.getOrElse(0) { rootNodeInfo.findAccessibilityNodeInfosByText(doneEn).getOrNull(0) }
                 ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+
         ShareInfo.setImageCount(0, 0)
     }
 
@@ -145,6 +136,17 @@ class WXShareMultiImageService : AccessibilityService() {
             }
         }
         return null
+    }
+
+    // 获取 APPLICATION 的 Window 根节点。
+    private fun getRootNodeInfo(): AccessibilityNodeInfo? {
+        var rootNodeInfo: AccessibilityNodeInfo? = null
+        for (window in windows) {
+            if (window.type == AccessibilityWindowInfo.TYPE_APPLICATION) {
+                rootNodeInfo = window.root
+            }
+        }
+        return rootNodeInfo ?: rootInActiveWindow
     }
 
     override fun onInterrupt() {
