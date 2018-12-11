@@ -1,14 +1,17 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
+def mVersionCode = 4
+def mVersionName = "1.0.4"
+
 android {
     compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode 1
-        versionName "1.0.3"
+        versionCode mVersionCode
+        versionName mVersionName
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -35,7 +38,7 @@ dependencies {
 
 // ./gradlew clean build bintrayUpload -PbintrayUser=shichaohui -PbintrayKey=xxx -PdryRun=false
 apply plugin: "guru.stefma.bintrayrelease"
-version = "1.0.3"
+version = mVersionName
 group = "com.sch.share"
 androidArtifact {
     artifactId = "wx-share"
