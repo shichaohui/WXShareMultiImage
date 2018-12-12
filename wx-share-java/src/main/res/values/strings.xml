@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">wx-share</string>
+    <string name="wx_share_multi_image_service_label">@string/app_name</string>
+    <string name="wx_share_multi_image_service_helper">开启该服务后，可分享多图到朋友圈（自动粘贴文字，自动选择图片，无需手动操作）。\n\n个别型号的手机，退出 APP 后，手机会关闭该功能导致失效。出现该情况时，您可以尝试关闭并重新打开该服务，或者重启手机。</string>
+    <string name="wx_share_dialog_title">开启【多图分享】</string>
+    <string name="wx_share_dialog_message">到[设置->辅助功能->无障碍]开启多图分享至朋友圈功能。</string>
+    <string name="wx_share_dialog_positive_button_text">开启</string>
+    <string name="wx_share_dialog_negative_button_text">取消</string>
+</resources>

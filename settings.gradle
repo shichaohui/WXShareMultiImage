@@ -1,1 +1,1 @@
-include ':app', ':wx-share'
+include ':app', ':wx-share', ':wx-share-java'

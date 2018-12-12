@@ -1,0 +1,20 @@
+<manifest package="com.sch.share"
+          xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
+    <application>
+        <service android:name=".WXShareMultiImageService"
+                 android:label="@string/wx_share_multi_image_service_label"
+                 android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/wx_share_accessibility_service_config"/>
+        </service>
+    </application>
+
+</manifest>
