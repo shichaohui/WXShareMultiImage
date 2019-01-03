@@ -42,9 +42,13 @@ public class WXShareMultiImageService extends AccessibilityService {
     private AccessibilityNodeInfo prevSource = null;
     private AccessibilityNodeInfo prevListView = null;
 
+    private String currentUI = "";
+
     // 当窗口发生的事件是我们配置监听的事件时,会回调此方法.会被调用多次
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+
+        System.out.println("---------> " + event);
 
         if (!ShareInfo.isAuto()) {
             return;
@@ -54,18 +58,23 @@ public class WXShareMultiImageService extends AccessibilityService {
             case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
                 switch (event.getClassName().toString()) {
                     case LAUNCHER_UI:
+                        currentUI = LAUNCHER_UI;
                         openDiscover(event);
                         break;
                     case SNS_TIME_LINE_UI:
+                        currentUI = SNS_TIME_LINE_UI;
                         processingSnsTimeLineUI(event);
                         break;
                     case SNS_UPLOAD_UI:
+                        currentUI = SNS_UPLOAD_UI;
                         processingSnsUploadUI(event);
                         break;
                     case ALBUM_PREVIEW_UI:
+                        currentUI = ALBUM_PREVIEW_UI;
                         selectImage(event);
                         break;
                     default:
+                        currentUI = "";
                         break;
                 }
                 break;
@@ -77,6 +86,13 @@ public class WXShareMultiImageService extends AccessibilityService {
             case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
                 if (event.getClassName().toString().equals(ListView.class.getName())) {
                     openAlbum(event);
+                }
+                break;
+            case AccessibilityEvent.TYPE_VIEW_FOCUSED:
+                if (currentUI.equals(LAUNCHER_UI)) {
+                    if (event.getClassName().toString().equals(ListView.class.getName())) {
+                        openDiscover(event);
+                    }
                 }
                 break;
             default:
