@@ -8,6 +8,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityWindowInfo;
 import android.widget.EditText;
 import android.widget.GridView;
+import android.widget.ImageButton;
 import android.widget.ListView;
 
 import com.sch.share.utils.ClipboardUtil;
@@ -21,11 +22,16 @@ import java.util.*;
  */
 public class WXShareMultiImageService extends AccessibilityService {
 
-    private static final String snsUploadUI = "com.tencent.mm.plugin.sns.ui.SnsUploadUI";
-    private static final String albumPreviewUI = "com.tencent.mm.plugin.gallery.ui.AlbumPreviewUI";
+    private static final String LAUNCHER_UI = "com.tencent.mm.ui.LauncherUI";
+    private static final String SNS_TIME_LINE_UI = "com.tencent.mm.plugin.sns.ui.SnsTimeLineUI";
+    private static final String SNS_UPLOAD_UI = "com.tencent.mm.plugin.sns.ui.SnsUploadUI";
+    private static final String ALBUM_PREVIEW_UI = "com.tencent.mm.plugin.gallery.ui.AlbumPreviewUI";
 
-    private static final String doneZh = "完成";
-    private static final String doneEn = "Done";
+    private static final String DISCOVER_ZH = "发现";
+    private static final String DISCOVER_EN = "Discover";
+
+    private static final String DONE_ZH = "完成";
+    private static final String DONE_EN = "Done";
 
     private AccessibilityNodeInfo prevSource = null;
     private AccessibilityNodeInfo prevListView = null;
@@ -34,6 +40,8 @@ public class WXShareMultiImageService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
 
+        System.out.println("----> " + event);
+
         if (!ShareInfo.isAuto()) {
             return;
         }
@@ -41,14 +49,25 @@ public class WXShareMultiImageService extends AccessibilityService {
         switch (event.getEventType()) {
             case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
                 switch (event.getClassName().toString()) {
-                    case snsUploadUI:
+                    case LAUNCHER_UI:
+                        openDiscover(event);
+                        break;
+                    case SNS_TIME_LINE_UI:
+                        processingSnsTimeLineUI(event);
+                        break;
+                    case SNS_UPLOAD_UI:
                         processingSnsUploadUI(event);
                         break;
-                    case albumPreviewUI:
+                    case ALBUM_PREVIEW_UI:
                         selectImage(event);
                         break;
                     default:
                         break;
+                }
+                break;
+            case AccessibilityEvent.TYPE_VIEW_CLICKED:
+                if (event.getText().indexOf(DISCOVER_ZH) >= 0 || event.getText().indexOf(DISCOVER_EN) >= 0) {
+                    openMoments(event);
                 }
                 break;
             case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
@@ -60,6 +79,58 @@ public class WXShareMultiImageService extends AccessibilityService {
                 break;
         }
 
+    }
+
+    private void openDiscover(AccessibilityEvent event) {
+
+        if (ShareInfo.getWaitingImageCount() <= 0) {
+            return;
+        }
+
+        AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo();
+
+        List<AccessibilityNodeInfo> discoverNodeList = rootNodeInfo.findAccessibilityNodeInfosByText(DISCOVER_ZH);
+        if (discoverNodeList.isEmpty()) {
+            discoverNodeList = rootNodeInfo.findAccessibilityNodeInfosByText(DISCOVER_EN);
+        }
+        if (!discoverNodeList.isEmpty()) {
+            discoverNodeList.get(0).getParent().getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        }
+    }
+
+    private void openMoments(AccessibilityEvent event) {
+
+        if (ShareInfo.getWaitingImageCount() <= 0) {
+            return;
+        }
+
+        AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo();
+
+        List<AccessibilityNodeInfo> commentsList = rootNodeInfo.findAccessibilityNodeInfosByText("朋友圈");
+
+        if (commentsList != null && !commentsList.isEmpty()) {
+            AccessibilityNodeInfo listView = findParent(commentsList.get(0), ListView.class.getName());
+            if (listView != null) {
+                listView.getChild(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            }
+        }
+    }
+
+    private void processingSnsTimeLineUI(AccessibilityEvent event) {
+        if (ShareInfo.getWaitingImageCount() <= 0) {
+            return;
+        }
+        // 过滤重复事件。
+        if (event.getSource().equals(prevSource)) {
+            return;
+        }
+        prevSource = event.getSource();
+
+        AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo();
+        AccessibilityNodeInfo ibtnShare = findNodeInfo(rootNodeInfo, ImageButton.class.getName());
+        if (ibtnShare != null) {
+            ibtnShare.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        }
     }
 
     // 处理图文分享界面。
@@ -98,6 +169,7 @@ public class WXShareMultiImageService extends AccessibilityService {
             editText.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
             editText.performAction(AccessibilityNodeInfo.ACTION_PASTE);
         }
+        ShareInfo.setText("");
     }
 
     // 打开相册。
@@ -106,14 +178,18 @@ public class WXShareMultiImageService extends AccessibilityService {
             return;
         }
         AccessibilityNodeInfo listView = event.getSource();
+        List<AccessibilityNodeInfo> albumNodeInfoList = listView.findAccessibilityNodeInfosByText("从相册选择");
+        if (albumNodeInfoList == null || albumNodeInfoList.isEmpty()) {
+            return;
+        }
         // 过滤重复事件。
         if (listView == prevListView) {
             return;
         }
         prevListView = listView;
 
-        if (listView != null && listView.getChildCount() > 0) {
-            listView.getChild(listView.getChildCount() - 1).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        if (listView.getChildCount() > 0) {
+            listView.getChild(1).performAction(AccessibilityNodeInfo.ACTION_CLICK);
         }
     }
 
@@ -130,22 +206,35 @@ public class WXShareMultiImageService extends AccessibilityService {
         if (gridView == null) {
             return;
         }
-        for (int i = ShareInfo.getSelectedImageCount(); i <= ShareInfo.getWaitingImageCount(); i++) {
-            AccessibilityNodeInfo viewNode = findNodeInfo(gridView.getChild(i), View.class.getName());
+        int index = ShareInfo.getSelectedImageCount();
+        int maxIndex = ShareInfo.getSelectedImageCount() + ShareInfo.getWaitingImageCount();
+        for (; index < maxIndex; index++) {
+            AccessibilityNodeInfo viewNode = findNodeInfo(gridView.getChild(index), View.class.getName());
             if (viewNode != null) {
                 viewNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
             }
         }
 
-        List<AccessibilityNodeInfo> doneNodeList = rootNodeInfo.findAccessibilityNodeInfosByText(doneZh);
+        List<AccessibilityNodeInfo> doneNodeList = rootNodeInfo.findAccessibilityNodeInfosByText(DONE_ZH);
         if (doneNodeList.isEmpty()) {
-            doneNodeList = rootNodeInfo.findAccessibilityNodeInfosByText(doneEn);
+            doneNodeList = rootNodeInfo.findAccessibilityNodeInfosByText(DONE_EN);
         }
         if (!doneNodeList.isEmpty()) {
             doneNodeList.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
         }
 
         ShareInfo.setImageCount(0, 0);
+    }
+
+    private AccessibilityNodeInfo findParent(AccessibilityNodeInfo childNodeInfo, String parentClassName) {
+        AccessibilityNodeInfo parentNodeInfo = childNodeInfo.getParent();
+        if (parentNodeInfo == null) {
+            return null;
+        }
+        if (parentNodeInfo.getClassName().equals(parentClassName)) {
+            return parentNodeInfo;
+        }
+        return findParent(parentNodeInfo, parentClassName);
     }
 
     // 查找指定类名的节点。

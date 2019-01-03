@@ -41,11 +41,14 @@ import java.util.List;
 public class WXShareMultiImageHelper {
 
     private static final String WX_PACKAGE_NAME = "com.tencent.mm";
+    private static final String LAUNCHER_UI = "com.tencent.mm.ui.LauncherUI";
     private static final String SHARE_IMG_UI = "com.tencent.mm.ui.tools.ShareImgUI";
     private static final String SHARE_TO_TIMELINE_UI = "com.tencent.mm.ui.tools.ShareToTimeLineUI";
 
     // 微信 v6.7.3 版本的 versionCode 。
     private static final int WX_V673 = 1360;
+    // 微信 v7.0.0 版本的 versionCode 。
+    private static final int WX_V700 = 1380;
 
     /**
      * 是否安装了微信。
@@ -94,11 +97,11 @@ public class WXShareMultiImageHelper {
         return true;
     }
 
-    // 打开分享界面
+    // 打开分享界面。
     private static void openShareUI(Context context, String text, List<Uri> uriList, String ui) {
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_SEND_MULTIPLE);
-        intent.setComponent(new ComponentName("com.tencent.mm", ui));
+        intent.setComponent(new ComponentName(WX_PACKAGE_NAME, ui));
         intent.setType("image/*");
         intent.putStringArrayListExtra(Intent.EXTRA_TEXT, new ArrayList<String>());
         intent.putExtra("Kdescription", text);
@@ -127,6 +130,7 @@ public class WXShareMultiImageHelper {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                ShareInfo.setAuto(false);
                 if (checkShareEnable(activity)) {
                     if (!TextUtils.isEmpty(text)) {
                         ClipboardUtil.setPrimaryClip(activity, "", text);
@@ -136,13 +140,14 @@ public class WXShareMultiImageHelper {
                     String dir = getTmpFileDir(activity);
                     List<Uri> uriList = new ArrayList<>();
                     for (Bitmap bitmap : imageList) {
-                        uriList.add(saveBitmap(dir, bitmap));
+                        uriList.add(Uri.fromFile(new File(saveBitmap(dir, bitmap))));
                     }
                     openShareUI(activity, text, uriList, SHARE_IMG_UI);
                 }
             }
         });
     }
+
 
     /**
      * 分享到朋友圈。
@@ -240,11 +245,6 @@ public class WXShareMultiImageHelper {
                     return;
                 }
 
-                ShareInfo.setAuto(isAuto);
-                if (!TextUtils.isEmpty(text)) {
-                    ClipboardUtil.setPrimaryClip(activity, "", text);
-                }
-
                 final ProgressDialog dialog = new ProgressDialog(activity);
                 dialog.setMessage("请稍候...");
                 dialog.show();
@@ -252,64 +252,100 @@ public class WXShareMultiImageHelper {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        if (isAuto) {
-                            // 因为第一张由微信 API 带进去，所以不需要自动选择。
-                            ShareInfo.setImageCount(1, imageList.size() - 1);
-
-                            ShareInfo.setText(text);
-                        }
 
                         clearTmpFile(activity);
 
                         String dir = getTmpFileDir(activity);
-                        final List<Uri> uriList = new ArrayList<>();
-                        MediaScannerConnection.OnScanCompletedListener scanCompletedListener = new MediaScannerConnection.OnScanCompletedListener() {
-                            @Override
-                            public void onScanCompleted(String path, Uri uri) {
-                            }
-                        };
+                        final String[] paths = new String[imageList.size()];
+                        final String[] mimeTypes = new String[imageList.size()];
                         Collections.reverse(imageList);
-                        for (Bitmap bitmap : imageList) {
-                            // 保存图片
-                            Uri uri = saveBitmap(dir, bitmap);
-                            uriList.add(uri);
-                            // 扫描图片
-                            MediaScannerConnection.scanFile(activity, new String[]{uri.getPath()}, new String[]{"image/*"}, scanCompletedListener);
+                        for (int i = 0; i < imageList.size(); i++) {
+                            paths[i] = saveBitmap(dir, imageList.get(i));
+                            mimeTypes[i] = "image/*";
                         }
 
-                        activity.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                // 打开分享
-                                Collections.reverse(uriList);
-                                if (getWXVersionCode(activity) < WX_V673) {
-                                    openShareUI(activity, text, uriList, SHARE_TO_TIMELINE_UI);
-                                } else {
-                                    openShareUI(activity, text, uriList.subList(0, 1), SHARE_TO_TIMELINE_UI);
-                                }
-                                if (!isAuto) {
-                                    // 文字提示。
-                                    StringBuilder stringBuilder = new StringBuilder();
-                                    if (!TextUtils.isEmpty(text)) {
-                                        stringBuilder.append("长按粘贴文字");
-                                    }
-                                    if (imageList.size() > 0 && getWXVersionCode(activity) >= WX_V673) {
-                                        if (stringBuilder.length() > 0) {
-                                            stringBuilder.append(",");
+                        MediaScannerConnection.scanFile(
+                                activity,
+                                paths,
+                                mimeTypes,
+                                new MediaScannerConnection.OnScanCompletedListener() {
+
+                                    List<Uri> uriList = new ArrayList<>();
+
+                                    @Override
+                                    public void onScanCompleted(String path, Uri uri) {
+                                        uriList.add(uri);
+                                        if (uriList.size() < paths.length) {
+                                            return;
                                         }
-                                        stringBuilder.append("点击加号添加剩余图片");
+                                        activity.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                Collections.reverse(uriList);
+                                                internalShareToTimeline(activity, text, uriList, isAuto);
+                                                dialog.cancel();
+                                            }
+                                        });
+
                                     }
-                                    if (stringBuilder.length() > 0) {
-                                        Toast.makeText(activity, stringBuilder.toString(), Toast.LENGTH_LONG).show();
-                                    }
-                                }
-                                dialog.cancel();
-                            }
-                        });
+                                });
                     }
                 }).start();
             }
         });
+    }
+
+    // 打开分享界面
+    private static void internalShareToTimeline(Context context, String text, List<Uri> uriList, boolean isAuto) {
+        int wxCode = getWXVersionCode(context);
+        if (wxCode < WX_V673) {
+            shareToTimelineUIV673Lower(context, text, uriList);
+        } else if (wxCode < WX_V700) {
+            shareToTimelineUIV673(context, text, uriList, isAuto);
+        } else {
+            shareToTimelineUIV700(context, text, uriList, isAuto);
+        }
+    }
+
+    private static void shareToTimelineUIV673Lower(Context context, String text, List<Uri> uriList) {
+        if (!TextUtils.isEmpty(text)) {
+            ClipboardUtil.setPrimaryClip(context, "", text);
+            Toast.makeText(context, "文字已复制到剪切板", Toast.LENGTH_LONG).show();
+        }
+        openShareUI(context, text, uriList, SHARE_TO_TIMELINE_UI);
+    }
+
+    private static void shareToTimelineUIV673(Context context, String text, List<Uri> uriList, boolean isAuto) {
+
+        if (!TextUtils.isEmpty(text) && !isAuto) {
+            ClipboardUtil.setPrimaryClip(context, "", text);
+            Toast.makeText(context, "长按粘贴文字\n点击加号添加剩余图片", Toast.LENGTH_LONG).show();
+        }
+
+        ShareInfo.setAuto(isAuto);
+        ShareInfo.setText(text);
+        ShareInfo.setImageCount(1, uriList.size() - 1);
+
+        openShareUI(context, text, uriList, SHARE_TO_TIMELINE_UI);
+    }
+
+    private static void shareToTimelineUIV700(Context context, String text, List<Uri> uriList, boolean isAuto) {
+
+        if (!TextUtils.isEmpty(text) && !isAuto) {
+            ClipboardUtil.setPrimaryClip(context, "", text);
+            Toast.makeText(context, "文字已复制到剪切板\n图片已保存至相册\n打开朋友圈即可分享", Toast.LENGTH_LONG).show();
+        }
+
+        ShareInfo.setAuto(isAuto);
+        ShareInfo.setText(text);
+        ShareInfo.setImageCount(0, uriList.size());
+
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.setAction(Intent.ACTION_MAIN);
+        intent.setComponent(new ComponentName(WX_PACKAGE_NAME, LAUNCHER_UI));
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
     }
 
     // 文件临时保存目录。
@@ -343,14 +379,14 @@ public class WXShareMultiImageHelper {
     }
 
     // 保存图片并返回 Uri 。
-    private static Uri saveBitmap(String dir, Bitmap bitmap) {
-        String target = String.format("%s%s%s.jpg", dir, File.separator, System.currentTimeMillis());
+    private static String saveBitmap(String dir, Bitmap bitmap) {
+        String path = String.format("%s%s%s.jpg", dir, File.separator, System.currentTimeMillis());
         try {
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, new FileOutputStream(target));
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, new FileOutputStream(path));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        return Uri.fromFile(new File(target));
+        return path;
     }
 
     /**
