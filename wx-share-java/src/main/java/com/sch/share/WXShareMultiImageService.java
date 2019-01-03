@@ -33,14 +33,18 @@ public class WXShareMultiImageService extends AccessibilityService {
     private static final String DONE_ZH = "完成";
     private static final String DONE_EN = "Done";
 
+    private static final String MOMENTS_ZH = "朋友圈";
+    private static final String MOMENTS_EN = "Moments";
+
+    private static final String SELECT_FROM_ALBUM_ZH = "从相册选择";
+    private static final String SELECT_FROM_ALBUM_EN = "Select Photos or Videos from Album";
+
     private AccessibilityNodeInfo prevSource = null;
     private AccessibilityNodeInfo prevListView = null;
 
     // 当窗口发生的事件是我们配置监听的事件时,会回调此方法.会被调用多次
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-
-        System.out.println("----> " + event);
 
         if (!ShareInfo.isAuto()) {
             return;
@@ -106,9 +110,11 @@ public class WXShareMultiImageService extends AccessibilityService {
 
         AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo();
 
-        List<AccessibilityNodeInfo> commentsList = rootNodeInfo.findAccessibilityNodeInfosByText("朋友圈");
-
-        if (commentsList != null && !commentsList.isEmpty()) {
+        List<AccessibilityNodeInfo> commentsList = rootNodeInfo.findAccessibilityNodeInfosByText(MOMENTS_ZH);
+        if (commentsList.isEmpty()) {
+            commentsList = rootNodeInfo.findAccessibilityNodeInfosByText(MOMENTS_EN);
+        }
+        if (!commentsList.isEmpty()) {
             AccessibilityNodeInfo listView = findParent(commentsList.get(0), ListView.class.getName());
             if (listView != null) {
                 listView.getChild(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
@@ -178,17 +184,17 @@ public class WXShareMultiImageService extends AccessibilityService {
             return;
         }
         AccessibilityNodeInfo listView = event.getSource();
-        List<AccessibilityNodeInfo> albumNodeInfoList = listView.findAccessibilityNodeInfosByText("从相册选择");
-        if (albumNodeInfoList == null || albumNodeInfoList.isEmpty()) {
-            return;
-        }
         // 过滤重复事件。
         if (listView == prevListView) {
             return;
         }
         prevListView = listView;
 
-        if (listView.getChildCount() > 0) {
+        List<AccessibilityNodeInfo> albumNodeInfoList = listView.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_ZH);
+        if (albumNodeInfoList.isEmpty()) {
+            albumNodeInfoList = listView.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_EN);
+        }
+        if (!albumNodeInfoList.isEmpty()) {
             listView.getChild(1).performAction(AccessibilityNodeInfo.ACTION_CLICK);
         }
     }
