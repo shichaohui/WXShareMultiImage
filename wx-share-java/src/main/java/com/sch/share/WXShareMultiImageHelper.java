@@ -317,12 +317,14 @@ public class WXShareMultiImageHelper {
 
     private static void shareToTimelineUIV673(Context context, String text, List<Uri> uriList, boolean isAuto) {
 
-        if (!isAuto) {
-            if (TextUtils.isEmpty(text)) {
-                Toast.makeText(context, "点击加号添加剩余图片", Toast.LENGTH_LONG).show();
-            } else {
-                ClipboardUtil.setPrimaryClip(context, "", text);
+        if (!TextUtils.isEmpty(text)) {
+            ClipboardUtil.setPrimaryClip(context, "", text);
+            if (!isAuto) {
                 Toast.makeText(context, "长按粘贴文字\n点击加号添加剩余图片", Toast.LENGTH_LONG).show();
+            }
+        } else {
+            if (!isAuto) {
+                Toast.makeText(context, "点击加号添加剩余图片", Toast.LENGTH_LONG).show();
             }
         }
 
@@ -335,12 +337,14 @@ public class WXShareMultiImageHelper {
 
     private static void shareToTimelineUIV700(Context context, String text, List<Uri> uriList, boolean isAuto) {
 
-        if (!isAuto) {
-            if (TextUtils.isEmpty(text)) {
-                Toast.makeText(context, "图片已保存至相册，打开朋友圈即可分享", Toast.LENGTH_LONG).show();
-            } else {
-                ClipboardUtil.setPrimaryClip(context, "", text);
+        if (!TextUtils.isEmpty(text)) {
+            ClipboardUtil.setPrimaryClip(context, "", text);
+            if (!isAuto) {
                 Toast.makeText(context, "文字已复制到剪切板\n图片已保存至相册\n打开朋友圈即可分享", Toast.LENGTH_LONG).show();
+            }
+        } else {
+            if (!isAuto) {
+                Toast.makeText(context, "图片已保存至相册，打开朋友圈即可分享", Toast.LENGTH_LONG).show();
             }
         }
 
