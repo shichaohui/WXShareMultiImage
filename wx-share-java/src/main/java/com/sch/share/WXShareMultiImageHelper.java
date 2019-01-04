@@ -331,9 +331,13 @@ public class WXShareMultiImageHelper {
 
     private static void shareToTimelineUIV700(Context context, String text, List<Uri> uriList, boolean isAuto) {
 
-        if (!TextUtils.isEmpty(text) && !isAuto) {
-            ClipboardUtil.setPrimaryClip(context, "", text);
-            Toast.makeText(context, "文字已复制到剪切板\n图片已保存至相册\n打开朋友圈即可分享", Toast.LENGTH_LONG).show();
+        if (!isAuto) {
+            if (TextUtils.isEmpty(text)) {
+                Toast.makeText(context, "图片已保存至相册，打开朋友圈即可分享", Toast.LENGTH_LONG).show();
+            } else {
+                ClipboardUtil.setPrimaryClip(context, "", text);
+                Toast.makeText(context, "文字已复制到剪切板\n图片已保存至相册\n打开朋友圈即可分享", Toast.LENGTH_LONG).show();
+            }
         }
 
         ShareInfo.setAuto(isAuto);
