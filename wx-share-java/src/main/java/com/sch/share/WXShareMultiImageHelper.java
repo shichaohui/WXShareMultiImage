@@ -255,6 +255,7 @@ public class WXShareMultiImageHelper {
 
                         clearTmpFile(activity);
 
+                        // 保存图片
                         String dir = getTmpFileDir(activity);
                         final String[] paths = new String[imageList.size()];
                         final String[] mimeTypes = new String[imageList.size()];
@@ -264,6 +265,7 @@ public class WXShareMultiImageHelper {
                             mimeTypes[i] = "image/*";
                         }
 
+                        // 扫描图片
                         MediaScannerConnection.scanFile(
                                 activity,
                                 paths,
@@ -278,6 +280,7 @@ public class WXShareMultiImageHelper {
                                         if (uriList.size() < paths.length) {
                                             return;
                                         }
+                                        // 扫描结束执行分享。
                                         activity.runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {
@@ -307,6 +310,7 @@ public class WXShareMultiImageHelper {
         }
     }
 
+    // 分享到微信 v6.7.3 以下 。
     private static void shareToTimelineUIV673Lower(Context context, String text, List<Uri> uriList) {
         if (!TextUtils.isEmpty(text)) {
             ClipboardUtil.setPrimaryClip(context, "", text);
@@ -315,6 +319,7 @@ public class WXShareMultiImageHelper {
         openShareUI(context, text, uriList, SHARE_TO_TIMELINE_UI);
     }
 
+    // 分享到微信 v6.7.3 。
     private static void shareToTimelineUIV673(Context context, String text, List<Uri> uriList, boolean isAuto) {
 
         if (!TextUtils.isEmpty(text)) {
@@ -335,6 +340,7 @@ public class WXShareMultiImageHelper {
         openShareUI(context, text, uriList.subList(0, 1), SHARE_TO_TIMELINE_UI);
     }
 
+    // 分享到微信 v7.0.0 。
     private static void shareToTimelineUIV700(Context context, String text, List<Uri> uriList, boolean isAuto) {
 
         if (!TextUtils.isEmpty(text)) {

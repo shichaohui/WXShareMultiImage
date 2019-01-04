@@ -48,8 +48,6 @@ public class WXShareMultiImageService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
 
-        System.out.println("---------> " + event);
-
         if (!ShareInfo.isAuto()) {
             return;
         }
@@ -101,6 +99,7 @@ public class WXShareMultiImageService extends AccessibilityService {
 
     }
 
+    // 打开发现界面。
     private void openDiscover(AccessibilityEvent event) {
 
         if (ShareInfo.getWaitingImageCount() <= 0) {
@@ -118,6 +117,7 @@ public class WXShareMultiImageService extends AccessibilityService {
         }
     }
 
+    // 打开朋友圈。
     private void openMoments(AccessibilityEvent event) {
 
         if (ShareInfo.getWaitingImageCount() <= 0) {
@@ -138,6 +138,7 @@ public class WXShareMultiImageService extends AccessibilityService {
         }
     }
 
+    // 处理朋友圈界面。
     private void processingSnsTimeLineUI(AccessibilityEvent event) {
         if (ShareInfo.getWaitingImageCount() <= 0) {
             return;
@@ -148,6 +149,7 @@ public class WXShareMultiImageService extends AccessibilityService {
         }
         prevSource = event.getSource();
 
+        // 点击分享按钮。
         AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo();
         AccessibilityNodeInfo ibtnShare = findNodeInfo(rootNodeInfo, ImageButton.class.getName());
         if (ibtnShare != null) {
@@ -206,6 +208,7 @@ public class WXShareMultiImageService extends AccessibilityService {
         }
         prevListView = listView;
 
+        // 点击从相册选择。
         List<AccessibilityNodeInfo> albumNodeInfoList = listView.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_ZH);
         if (albumNodeInfoList.isEmpty()) {
             albumNodeInfoList = listView.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_EN);
@@ -237,6 +240,7 @@ public class WXShareMultiImageService extends AccessibilityService {
             }
         }
 
+        // 点击完成按钮。
         List<AccessibilityNodeInfo> doneNodeList = rootNodeInfo.findAccessibilityNodeInfosByText(DONE_ZH);
         if (doneNodeList.isEmpty()) {
             doneNodeList = rootNodeInfo.findAccessibilityNodeInfosByText(DONE_EN);
@@ -245,9 +249,11 @@ public class WXShareMultiImageService extends AccessibilityService {
             doneNodeList.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
         }
 
+        // 自动分享结束。
         ShareInfo.setImageCount(0, 0);
     }
 
+    // 查找指定类名的父节点。
     private AccessibilityNodeInfo findParent(AccessibilityNodeInfo childNodeInfo, String parentClassName) {
         AccessibilityNodeInfo parentNodeInfo = childNodeInfo.getParent();
         if (parentNodeInfo == null) {
