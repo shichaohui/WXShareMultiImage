@@ -33,11 +33,15 @@ import kotlin.concurrent.thread
  */
 object WXShareMultiImageHelper {
 
+    private const val WX_PACKAGE_NAME = "com.tencent.mm"
+    private const val LAUNCHER_UI = "com.tencent.mm.ui.LauncherUI"
     private const val SHARE_IMG_UI = "com.tencent.mm.ui.tools.ShareImgUI"
     private const val SHARE_TO_TIMELINE_UI = "com.tencent.mm.ui.tools.ShareToTimeLineUI"
 
     // 微信 v6.7.3 版本的 versionCode 。
     private const val WX_V673 = 1360
+    // 微信 v7.0.0 版本的 versionCode 。
+    private const val WX_V700 = 1380
 
     /**
      * 是否安装了微信。
@@ -45,7 +49,7 @@ object WXShareMultiImageHelper {
     @JvmStatic
     fun isWXInstalled(context: Context): Boolean {
         context.packageManager.getInstalledPackages(0)
-                ?.filter { it.packageName.equals("com.tencent.mm", true) }
+                ?.filter { it.packageName.equals(WX_PACKAGE_NAME, true) }
                 ?.let { return !it.isEmpty() }
         return false
     }
@@ -56,7 +60,7 @@ object WXShareMultiImageHelper {
     @JvmStatic
     fun getWXVersionCode(context: Context): Int {
         return context.packageManager.getInstalledPackages(0)
-                ?.filter { it.packageName.equals("com.tencent.mm", true) }
+                ?.filter { it.packageName.equals(WX_PACKAGE_NAME, true) }
                 ?.let { if (it.isEmpty()) 0 else it[0].versionCode }
                 ?: 0
     }
@@ -86,7 +90,7 @@ object WXShareMultiImageHelper {
     private fun openShareUI(context: Context, text: String, uriList: List<Uri>, ui: String) {
         val intent = Intent()
         intent.action = Intent.ACTION_SEND_MULTIPLE
-        intent.component = ComponentName("com.tencent.mm", ui)
+        intent.component = ComponentName(WX_PACKAGE_NAME, ui)
         intent.type = "image/*"
         intent.putStringArrayListExtra(Intent.EXTRA_TEXT, arrayListOf())
         intent.putExtra("Kdescription", text)
@@ -111,7 +115,8 @@ object WXShareMultiImageHelper {
                 }
                 clearTmpFile(activity)
                 val dir = getTmpFileDir(activity)
-                openShareUI(activity, text, imageList.map { saveBitmap(dir, it) }, SHARE_IMG_UI)
+                val uriList = imageList.map { Uri.fromFile(File(saveBitmap(dir, it)))}
+                openShareUI(activity, text, uriList, SHARE_IMG_UI)
             }
         }
     }
@@ -181,60 +186,101 @@ object WXShareMultiImageHelper {
                 return@runOnUiThread
             }
 
-            ShareInfo.setAuto(isAuto)
-            if (!TextUtils.isEmpty(text)) {
-                ClipboardUtil.setPrimaryClip(activity, "", text)
-            }
-
             val dialog = ProgressDialog(activity)
             dialog.setMessage("请稍候...")
             dialog.show()
 
             thread(true) {
 
-                if (isAuto) {
-                    // 因为第一张由微信 API 带进去，所以不需要自动选择。
-                    ShareInfo.setImageCount(1, imageList.size - 1)
-
-                    ShareInfo.setText(text)
-                }
-
                 clearTmpFile(activity)
 
+                // 保存图片
                 val dir = getTmpFileDir(activity)
-                val uriList = imageList.reversed().map {
-                    // 保存图片
-                    val uri = saveBitmap(dir, it)
-                    // 扫描图片
-                    MediaScannerConnection.scanFile(activity, arrayOf(uri.path), arrayOf("image/*")) { _, _ -> }
-                    uri
-                }
-
-                activity.runOnUiThread {
-                    // 打开分享
-                    if (getWXVersionCode(activity) < WX_V673) {
-                        openShareUI(activity, text, uriList.reversed(), SHARE_TO_TIMELINE_UI)
-                    } else {
-                        openShareUI(activity, text, uriList.takeLast(1), SHARE_TO_TIMELINE_UI)
-                    }
-                    if (!isAuto) {
-                        // 文字提示。
-                        val stringBuilder = StringBuilder(if (TextUtils.isEmpty(text)) "" else "长按粘贴文字")
-                        if (imageList.isNotEmpty() && getWXVersionCode(activity) >= WX_V673) {
-                            stringBuilder.append(if (stringBuilder.isEmpty()) "" else "，")
-                            stringBuilder.append("点击加号添加剩余图片")
-                        }
-                        if (stringBuilder.isNotEmpty()) {
-                            Toast.makeText(activity, stringBuilder.toString(), Toast.LENGTH_LONG).show()
+                val paths = imageList.reversed().map { saveBitmap(dir, it)}.toTypedArray()
+                val mimeTypes = Array(paths.size) { "image/*" }
+                // 扫描图片
+                val uriList = mutableListOf<Uri>()
+                MediaScannerConnection.scanFile(activity, paths, mimeTypes) { path, uri ->
+                    uriList.add(uri)
+                    if (uriList.size >= paths.size) {
+                        // 扫描结束执行分享。
+                        activity.runOnUiThread {
+                            dialog.cancel()
+                            internalShareToTimeline(activity, text, uriList.reversed(), isAuto)
                         }
                     }
-                    dialog.cancel()
                 }
 
             }
 
         }
 
+    }
+
+    // 打开分享界面
+    private fun internalShareToTimeline(context: Context, text: String, uriList: List<Uri>, isAuto: Boolean) {
+        val wxCode = getWXVersionCode(context)
+        when {
+            wxCode < WX_V673 -> shareToTimelineUIV673Lower(context, text, uriList)
+            wxCode < WX_V700 -> shareToTimelineUIV673(context, text, uriList, isAuto)
+            else -> shareToTimelineUIV700(context, text, uriList, isAuto)
+        }
+    }
+
+    // 分享到微信 v6.7.3 以下 。
+    private fun shareToTimelineUIV673Lower(context: Context, text: String, uriList: List<Uri>) {
+        if (!TextUtils.isEmpty(text)) {
+            ClipboardUtil.setPrimaryClip(context, "", text)
+            Toast.makeText(context, "文字已复制到剪切板", Toast.LENGTH_LONG).show()
+        }
+        openShareUI(context, text, uriList, SHARE_TO_TIMELINE_UI)
+    }
+
+    // 分享到微信 v6.7.3 。
+    private fun shareToTimelineUIV673(context: Context, text: String, uriList: List<Uri>, isAuto: Boolean) {
+
+        if (!TextUtils.isEmpty(text)) {
+            ClipboardUtil.setPrimaryClip(context, "", text)
+            if (!isAuto) {
+                Toast.makeText(context, "长按粘贴文字\n点击加号添加剩余图片", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            if (!isAuto) {
+                Toast.makeText(context, "点击加号添加剩余图片", Toast.LENGTH_LONG).show()
+            }
+        }
+
+        ShareInfo.setAuto(isAuto)
+        ShareInfo.setText(text)
+        ShareInfo.setImageCount(1, uriList.size - 1)
+
+        openShareUI(context, text, uriList.subList(0, 1), SHARE_TO_TIMELINE_UI)
+    }
+
+    // 分享到微信 v7.0.0 。
+    private fun shareToTimelineUIV700(context: Context, text: String, uriList: List<Uri>, isAuto: Boolean) {
+
+        if (!TextUtils.isEmpty(text)) {
+            ClipboardUtil.setPrimaryClip(context, "", text)
+            if (!isAuto) {
+                Toast.makeText(context, "文字已复制到剪切板\n图片已保存至相册\n打开朋友圈即可分享", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            if (!isAuto) {
+                Toast.makeText(context, "图片已保存至相册，打开朋友圈即可分享", Toast.LENGTH_LONG).show()
+            }
+        }
+
+        ShareInfo.setAuto(isAuto)
+        ShareInfo.setText(text)
+        ShareInfo.setImageCount(0, uriList.size)
+
+        val intent = Intent(Intent.ACTION_MAIN)
+        intent.action = Intent.ACTION_MAIN
+        intent.component = ComponentName(WX_PACKAGE_NAME, LAUNCHER_UI)
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
     }
 
     // 文件临时保存目录。
@@ -271,10 +317,10 @@ object WXShareMultiImageHelper {
     }
 
     // 保存图片并返回 Uri 。
-    private fun saveBitmap(dir: String, bitmap: Bitmap): Uri {
-        val target = "$dir${File.separator}${System.currentTimeMillis()}.jpg"
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, FileOutputStream(target))
-        return Uri.fromFile(File(target))
+    private fun saveBitmap(dir: String, bitmap: Bitmap): String {
+        val path = "$dir${File.separator}${System.currentTimeMillis()}.jpg"
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, FileOutputStream(path))
+        return path
     }
 
     /**
