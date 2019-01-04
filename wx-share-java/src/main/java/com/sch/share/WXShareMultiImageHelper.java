@@ -326,7 +326,7 @@ public class WXShareMultiImageHelper {
         ShareInfo.setText(text);
         ShareInfo.setImageCount(1, uriList.size() - 1);
 
-        openShareUI(context, text, uriList, SHARE_TO_TIMELINE_UI);
+        openShareUI(context, text, uriList.subList(0, 1), SHARE_TO_TIMELINE_UI);
     }
 
     private static void shareToTimelineUIV700(Context context, String text, List<Uri> uriList, boolean isAuto) {
