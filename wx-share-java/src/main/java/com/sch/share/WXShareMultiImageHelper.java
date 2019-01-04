@@ -317,9 +317,13 @@ public class WXShareMultiImageHelper {
 
     private static void shareToTimelineUIV673(Context context, String text, List<Uri> uriList, boolean isAuto) {
 
-        if (!TextUtils.isEmpty(text) && !isAuto) {
-            ClipboardUtil.setPrimaryClip(context, "", text);
-            Toast.makeText(context, "长按粘贴文字\n点击加号添加剩余图片", Toast.LENGTH_LONG).show();
+        if (!isAuto) {
+            if (TextUtils.isEmpty(text)) {
+                Toast.makeText(context, "点击加号添加剩余图片", Toast.LENGTH_LONG).show();
+            } else {
+                ClipboardUtil.setPrimaryClip(context, "", text);
+                Toast.makeText(context, "长按粘贴文字\n点击加号添加剩余图片", Toast.LENGTH_LONG).show();
+            }
         }
 
         ShareInfo.setAuto(isAuto);
