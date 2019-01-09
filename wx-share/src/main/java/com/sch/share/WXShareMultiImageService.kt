@@ -204,7 +204,7 @@ class WXShareMultiImageService : AccessibilityService() {
         val rootNodeInfo = getRootNodeInfo() ?: return
         val gridView = rootNodeInfo.getChild(GridView::class.java.name) ?: return
 
-        val maxIndex = ShareInfo.getSelectedImageCount() + ShareInfo.getWaitingImageCount()
+        val maxIndex = ShareInfo.getSelectedImageCount() + ShareInfo.getWaitingImageCount() - 1
         (ShareInfo.getSelectedImageCount()..maxIndex)
                 .map { gridView.getChild(it).getChild(View::class.java.name) }
                 .forEach { it?.performAction(AccessibilityNodeInfo.ACTION_CLICK) }
