@@ -107,6 +107,9 @@ public class WXShareMultiImageService extends AccessibilityService {
         }
 
         AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo();
+        if (rootNodeInfo == null) {
+            return;
+        }
 
         List<AccessibilityNodeInfo> discoverNodeList = rootNodeInfo.findAccessibilityNodeInfosByText(DISCOVER_ZH);
         if (discoverNodeList.isEmpty()) {
@@ -125,6 +128,9 @@ public class WXShareMultiImageService extends AccessibilityService {
         }
 
         AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo();
+        if (rootNodeInfo == null) {
+            return;
+        }
 
         List<AccessibilityNodeInfo> commentsList = rootNodeInfo.findAccessibilityNodeInfosByText(MOMENTS_ZH);
         if (commentsList.isEmpty()) {
@@ -151,6 +157,9 @@ public class WXShareMultiImageService extends AccessibilityService {
 
         // 点击分享按钮。
         AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo();
+        if (rootNodeInfo == null) {
+            return;
+        }
         AccessibilityNodeInfo ibtnShare = findNodeInfo(rootNodeInfo, ImageButton.class.getName());
         if (ibtnShare != null) {
             ibtnShare.performAction(AccessibilityNodeInfo.ACTION_CLICK);
