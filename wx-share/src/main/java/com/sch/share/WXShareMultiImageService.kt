@@ -31,8 +31,6 @@ class WXShareMultiImageService : AccessibilityService() {
     private var prevSource: AccessibilityNodeInfo? = null
     private var prevListView: AccessibilityNodeInfo? = null
 
-    private var currentUI = ""
-
     // 当窗口发生的事件是我们配置监听的事件时,会回调此方法.会被调用多次
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
 
@@ -46,15 +44,12 @@ class WXShareMultiImageService : AccessibilityService() {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 when (event.className.toString()) {
                     SNS_UPLOAD_UI -> {
-                        currentUI = SNS_UPLOAD_UI
                         processingSnsUploadUI(event)
                     }
                     ALBUM_PREVIEW_UI -> {
-                        currentUI = ALBUM_PREVIEW_UI
                         selectImage(event)
                     }
                     else -> {
-                        currentUI = ""
                     }
                 }
             }
@@ -111,11 +106,7 @@ class WXShareMultiImageService : AccessibilityService() {
         }
         val listView = event.source
         // 过滤重复事件。
-        if (listView == prevListView) {
-            return
-        }
-        // 过滤非分享页面
-        if (currentUI != SNS_UPLOAD_UI) {
+        if (listView == null || listView == prevListView) {
             return
         }
         prevListView = listView
@@ -124,7 +115,7 @@ class WXShareMultiImageService : AccessibilityService() {
         listView.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_ZH)
                 .getOrElse(0) { listView.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_EN).getOrNull(0) }
                 ?.let {
-                    listView?.getChild(1)?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                    listView.getChild(1)?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                 }
     }
 
