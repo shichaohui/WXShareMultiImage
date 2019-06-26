@@ -19,19 +19,11 @@ import java.util.*
  */
 class WXShareMultiImageService : AccessibilityService() {
 
-    private val LAUNCHER_UI = "com.tencent.mm.ui.LauncherUI"
-    private val SNS_TIME_LINE_UI = "com.tencent.mm.plugin.sns.ui.SnsTimeLineUI"
     private val SNS_UPLOAD_UI = "com.tencent.mm.plugin.sns.ui.SnsUploadUI"
     private val ALBUM_PREVIEW_UI = "com.tencent.mm.plugin.gallery.ui.AlbumPreviewUI"
 
-    private val DISCOVER_ZH = "发现"
-    private val DISCOVER_EN = "Discover"
-
     private val DONE_ZH = "完成"
     private val DONE_EN = "Done"
-
-    private val MOMENTS_ZH = "朋友圈"
-    private val MOMENTS_EN = "Moments"
 
     private val SELECT_FROM_ALBUM_ZH = "从相册选择"
     private val SELECT_FROM_ALBUM_EN = "Select Photos or Videos from Album"
@@ -44,6 +36,8 @@ class WXShareMultiImageService : AccessibilityService() {
     // 当窗口发生的事件是我们配置监听的事件时,会回调此方法.会被调用多次
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
 
+        println(event)
+
         if (!ShareInfo.isAuto()) {
             return
         }
@@ -51,14 +45,6 @@ class WXShareMultiImageService : AccessibilityService() {
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 when (event.className.toString()) {
-                    LAUNCHER_UI -> {
-                        currentUI = LAUNCHER_UI
-                        openDiscover(event)
-                    }
-                    SNS_TIME_LINE_UI -> {
-                        currentUI = SNS_TIME_LINE_UI
-                        processingSnsTimeLineUI(event)
-                    }
                     SNS_UPLOAD_UI -> {
                         currentUI = SNS_UPLOAD_UI
                         processingSnsUploadUI(event)
@@ -72,75 +58,15 @@ class WXShareMultiImageService : AccessibilityService() {
                     }
                 }
             }
-            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
-                if (event.text.indexOf(DISCOVER_ZH) >= 0 || event.text.indexOf(DISCOVER_EN) >= 0) {
-                    openMoments(event)
-                }
-            }
-            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+            AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
                 when (event.className.toString()) {
                     ListView::class.java.name -> openAlbum(event)
-                }
-            }
-            AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
-                if (currentUI == LAUNCHER_UI) {
-                    if (event.className.toString() == ListView::class.java.name) {
-                        openDiscover(event)
-                    }
                 }
             }
             else -> {
             }
         }
 
-    }
-
-    // 打开发现界面。
-    private fun openDiscover(event: AccessibilityEvent) {
-
-        if (ShareInfo.getWaitingImageCount() <= 0) {
-            return
-        }
-
-        val rootNodeInfo = getRootNodeInfo() ?: return
-
-        rootNodeInfo.findAccessibilityNodeInfosByText(DISCOVER_ZH)
-                .getOrElse(0) { rootNodeInfo.findAccessibilityNodeInfosByText(DISCOVER_EN).getOrNull(0) }
-                ?.parent
-                ?.parent
-                ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-    }
-
-    // 打开朋友圈。
-    private fun openMoments(event: AccessibilityEvent) {
-
-        if (ShareInfo.getWaitingImageCount() <= 0) {
-            return
-        }
-
-        val rootNodeInfo = getRootNodeInfo() ?: return
-
-        rootNodeInfo.findAccessibilityNodeInfosByText(MOMENTS_ZH)
-                .getOrElse(0) { rootNodeInfo.findAccessibilityNodeInfosByText(MOMENTS_EN).getOrNull(0) }
-                ?.getParent(ListView::class.java.name)
-                ?.getChild(0)
-                ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-    }
-
-    // 处理朋友圈界面。
-    private fun processingSnsTimeLineUI(event: AccessibilityEvent) {
-        if (ShareInfo.getWaitingImageCount() <= 0) {
-            return
-        }
-        // 过滤重复事件。
-        if (event.source == prevSource) {
-            return
-        }
-        prevSource = event.source
-
-        // 点击分享按钮。
-        getRootNodeInfo()?.getChild(ImageButton::class.java.name)
-                ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
     // 处理图文分享界面。
@@ -158,9 +84,9 @@ class WXShareMultiImageService : AccessibilityService() {
         if (ShareInfo.getWaitingImageCount() <= 0) {
             return
         }
-        // 自动点击添加图片的 + 号按钮。
+        // 自动点击添加图片的按钮。
         rootNodeInfo.getChild(GridView::class.java.name)
-                ?.getLastChild()
+                ?.getChild(1)
                 ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
@@ -184,6 +110,10 @@ class WXShareMultiImageService : AccessibilityService() {
         val listView = event.source
         // 过滤重复事件。
         if (listView == prevListView) {
+            return
+        }
+        // 过滤非分享页面
+        if (currentUI != SNS_UPLOAD_UI) {
             return
         }
         prevListView = listView

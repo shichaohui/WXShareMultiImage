@@ -38,11 +38,6 @@ object WXShareMultiImageHelper {
     private const val SHARE_IMG_UI = "com.tencent.mm.ui.tools.ShareImgUI"
     private const val SHARE_TO_TIMELINE_UI = "com.tencent.mm.ui.tools.ShareToTimeLineUI"
 
-    // 微信 v6.7.3 版本的 versionCode 。
-    private const val WX_V673 = 1360
-    // 微信 v7.0.0 版本的 versionCode 。
-    private const val WX_V700 = 1380
-
     /**
      * 是否安装了微信。
      */
@@ -50,7 +45,7 @@ object WXShareMultiImageHelper {
     fun isWXInstalled(context: Context): Boolean {
         context.packageManager.getInstalledPackages(0)
                 ?.filter { it.packageName.equals(WX_PACKAGE_NAME, true) }
-                ?.let { return !it.isEmpty() }
+                ?.let { return it.isNotEmpty() }
         return false
     }
 
@@ -86,15 +81,26 @@ object WXShareMultiImageHelper {
         return true
     }
 
-    // 打开分享界面
-    private fun openShareUI(context: Context, text: String, uriList: List<Uri>, ui: String) {
+    // 打开分享给好友界面
+    private fun openShareImgUI(context: Context, text: String, uriList: List<Uri>) {
         val intent = Intent()
         intent.action = Intent.ACTION_SEND_MULTIPLE
-        intent.component = ComponentName(WX_PACKAGE_NAME, ui)
+        intent.component = ComponentName(WX_PACKAGE_NAME, SHARE_IMG_UI)
         intent.type = "image/*"
-        intent.putStringArrayListExtra(Intent.EXTRA_TEXT, arrayListOf())
         intent.putExtra("Kdescription", text)
+        intent.putStringArrayListExtra(Intent.EXTRA_TEXT, arrayListOf())
         intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uriList))
+        (context as Activity).startActivity(intent)
+    }
+
+    // 打开分享到朋友圈界面
+    private fun openShareToTimeLineUI(context: Context, text: String, uri: Uri) {
+        val intent = Intent()
+        intent.action = Intent.ACTION_SEND
+        intent.component = ComponentName(WX_PACKAGE_NAME, SHARE_TO_TIMELINE_UI)
+        intent.type = "image/*"
+        intent.putExtra("Kdescription", text)
+        intent.putExtra(Intent.EXTRA_STREAM, uri)
         (context as Activity).startActivity(intent)
     }
 
@@ -111,12 +117,12 @@ object WXShareMultiImageHelper {
             if (checkShareEnable(activity)) {
                 if (!TextUtils.isEmpty(text)) {
                     ClipboardUtil.setPrimaryClip(activity, "", text)
-                    Toast.makeText(activity, "文字已复制到剪切板", Toast.LENGTH_LONG).show()
+                    Toast.makeText(activity, "请长按粘贴内容", Toast.LENGTH_LONG).show()
                 }
                 clearTmpFile(activity)
                 val dir = getTmpFileDir(activity)
-                val uriList = imageList.map { Uri.fromFile(File(saveBitmap(dir, it)))}
-                openShareUI(activity, text, uriList, SHARE_IMG_UI)
+                val uriList = imageList.map { Uri.fromFile(File(saveBitmap(dir, it))) }
+                openShareImgUI(activity, text, uriList)
             }
         }
     }
@@ -133,22 +139,16 @@ object WXShareMultiImageHelper {
     @JvmOverloads
     fun shareToTimeline(activity: Activity, imageList: List<Bitmap>, text: String = "", isAuto: Boolean = true) {
         activity.runOnUiThread {
-            when {
-                (!isAuto || getWXVersionCode(activity) < WX_V673) -> {
-                    internalShareToTimeline(activity, text, imageList, false)
-                }
-                WXShareMultiImageHelper.isServiceEnabled(activity) -> {
-                    internalShareToTimeline(activity, text, imageList, true)
-                }
-                else -> {
-                    showOpenServiceDialog(activity,
-                            {
-                                WXShareMultiImageHelper.openService(activity) {
-                                    internalShareToTimeline(activity, text, imageList, it)
-                                }
-                            },
-                            { internalShareToTimeline(activity, text, imageList, false) })
-                }
+            if (!isAuto) {
+                internalShareToTimeline(activity, text, imageList, false)
+            } else if (isServiceEnabled(activity)) {
+                internalShareToTimeline(activity, text, imageList, true)
+            } else {
+                showOpenServiceDialog(
+                        activity,
+                        { openService(activity) { internalShareToTimeline(activity, text, imageList, it) } },
+                        { internalShareToTimeline(activity, text, imageList, false) }
+                )
             }
         }
     }
@@ -196,17 +196,21 @@ object WXShareMultiImageHelper {
 
                 // 保存图片
                 val dir = getTmpFileDir(activity)
-                val paths = imageList.reversed().map { saveBitmap(dir, it)}.toTypedArray()
+                val paths = imageList.reversed().map { saveBitmap(dir, it) }.toTypedArray()
                 val mimeTypes = Array(paths.size) { "image/*" }
                 // 扫描图片
                 val uriList = mutableListOf<Uri>()
-                MediaScannerConnection.scanFile(activity, paths, mimeTypes) { path, uri ->
+                MediaScannerConnection.scanFile(activity, paths, mimeTypes) { _, uri ->
                     uriList.add(uri)
                     if (uriList.size >= paths.size) {
                         // 扫描结束执行分享。
                         activity.runOnUiThread {
                             dialog.cancel()
-                            internalShareToTimeline(activity, text, uriList.reversed(), isAuto)
+                            if (!isAuto) {
+                                shareToTimelineUIManual(activity, text)
+                            } else {
+                                shareToTimelineUIAuto(activity, text, uriList.reversed())
+                            }
                         }
                     }
                 }
@@ -217,64 +221,33 @@ object WXShareMultiImageHelper {
 
     }
 
-    // 打开分享界面
-    private fun internalShareToTimeline(context: Context, text: String, uriList: List<Uri>, isAuto: Boolean) {
-        val wxCode = getWXVersionCode(context)
-        when {
-            wxCode < WX_V673 -> shareToTimelineUIV673Lower(context, text, uriList)
-            wxCode < WX_V700 -> shareToTimelineUIV673(context, text, uriList, isAuto)
-            else -> shareToTimelineUIV700(context, text, uriList, isAuto)
-        }
-    }
-
-    // 分享到微信 v6.7.3 以下 。
-    private fun shareToTimelineUIV673Lower(context: Context, text: String, uriList: List<Uri>) {
-        if (!TextUtils.isEmpty(text)) {
-            ClipboardUtil.setPrimaryClip(context, "", text)
-            Toast.makeText(context, "文字已复制到剪切板", Toast.LENGTH_LONG).show()
-        }
-        openShareUI(context, text, uriList, SHARE_TO_TIMELINE_UI)
-    }
-
-    // 分享到微信 v6.7.3 。
-    private fun shareToTimelineUIV673(context: Context, text: String, uriList: List<Uri>, isAuto: Boolean) {
+    // 分享到微信朋友圈（自动模式）。
+    private fun shareToTimelineUIAuto(context: Context, text: String, uriList: List<Uri>) {
 
         if (!TextUtils.isEmpty(text)) {
             ClipboardUtil.setPrimaryClip(context, "", text)
-            if (!isAuto) {
-                Toast.makeText(context, "长按粘贴文字\n点击加号添加剩余图片", Toast.LENGTH_LONG).show()
-            }
-        } else {
-            if (!isAuto) {
-                Toast.makeText(context, "点击加号添加剩余图片", Toast.LENGTH_LONG).show()
-            }
         }
 
-        ShareInfo.setAuto(isAuto)
+        ShareInfo.setAuto(true)
         ShareInfo.setText(text)
         ShareInfo.setImageCount(1, uriList.size - 1)
 
-        openShareUI(context, text, uriList.subList(0, 1), SHARE_TO_TIMELINE_UI)
+        openShareToTimeLineUI(context, text, uriList[0])
     }
 
-    // 分享到微信 v7.0.0 。
-    private fun shareToTimelineUIV700(context: Context, text: String, uriList: List<Uri>, isAuto: Boolean) {
+    // 分享到微信朋友圈（手动模式）。
+    private fun shareToTimelineUIManual(context: Context, text: String) {
 
         if (!TextUtils.isEmpty(text)) {
             ClipboardUtil.setPrimaryClip(context, "", text)
-            if (!isAuto) {
-                Toast.makeText(context, "文字已复制到剪切板\n图片已保存至相册\n打开朋友圈即可分享", Toast.LENGTH_LONG).show()
-            }
+            Toast.makeText(context, "请手动选择图片，长按粘贴内容！", Toast.LENGTH_LONG).show()
         } else {
-            if (!isAuto) {
-                Toast.makeText(context, "图片已保存至相册，打开朋友圈即可分享", Toast.LENGTH_LONG).show()
-            }
+            Toast.makeText(context, "请手动选择图片！", Toast.LENGTH_LONG).show()
         }
 
-        ShareInfo.setAuto(isAuto)
-        ShareInfo.setText(text)
-        ShareInfo.setImageCount(0, uriList.size)
+        ShareInfo.setAuto(false)
 
+        // 打开微信
         val intent = Intent(Intent.ACTION_MAIN)
         intent.action = Intent.ACTION_MAIN
         intent.component = ComponentName(WX_PACKAGE_NAME, LAUNCHER_UI)
@@ -331,7 +304,7 @@ object WXShareMultiImageHelper {
         (context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager)
                 .getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
                 .filter { it.id == "${context.packageName}/${WXShareMultiImageService::class.java.name}" }
-                .let { return !it.isEmpty() }
+                .let { return it.isNotEmpty() }
     }
 
     /**
@@ -341,7 +314,7 @@ object WXShareMultiImageHelper {
      */
     @JvmStatic
     fun openService(context: Context, listener: (Boolean) -> Unit) {
-        if (WXShareMultiImageHelper.isServiceEnabled(context)) {
+        if (isServiceEnabled(context)) {
             listener(true)
             return
         }
@@ -349,7 +322,7 @@ object WXShareMultiImageHelper {
             override fun onActivityResumed(activity: Activity?) {
                 if (context::class.java == activity!!::class.java) {
                     (context.applicationContext as Application).unregisterActivityLifecycleCallbacks(this)
-                    listener(WXShareMultiImageHelper.isServiceEnabled(context))
+                    listener(isServiceEnabled(context))
                 }
             }
         })
