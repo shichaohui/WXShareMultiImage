@@ -58,7 +58,9 @@ class WXShareMultiImageService : AccessibilityService() {
                     }
                 }
             }
-            AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
+            AccessibilityEvent.TYPE_VIEW_FOCUSED,
+            AccessibilityEvent.TYPE_VIEW_SCROLLED,
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
                 when (event.className.toString()) {
                     ListView::class.java.name -> openAlbum(event)
                 }
