@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -14,7 +13,9 @@
         android:layout_height="wrap_content"
         android:text="待分享文案..."
         android:textColor="@android:color/black"
-        android:textSize="16sp"/>
+        android:textSize="16sp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <GridView
         android:id="@+id/gridView"
@@ -23,7 +24,7 @@
         android:horizontalSpacing="10dp"
         android:verticalSpacing="10dp"
         app:layout_constraintBottom_toTopOf="@id/btnShareToSession"
-        app:layout_constraintTop_toBottomOf="@id/tvShareContent"/>
+        app:layout_constraintTop_toBottomOf="@id/tvShareContent" />
 
     <Button
         android:id="@+id/btnShareToSession"
@@ -33,7 +34,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/btnShareToTimeline"
         app:layout_constraintRight_toLeftOf="@id/btnShareToTimeline"
-        app:layout_constraintStart_toStartOf="parent"/>
+        app:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/btnShareToTimeline"
@@ -43,6 +44,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintLeft_toRightOf="@id/btnShareToSession"
-        app:layout_constraintStart_toEndOf="@id/btnShareToSession"/>
+        app:layout_constraintStart_toEndOf="@id/btnShareToSession" />
 
 </android.support.constraint.ConstraintLayout>
