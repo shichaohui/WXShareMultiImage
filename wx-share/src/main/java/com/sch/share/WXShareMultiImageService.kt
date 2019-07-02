@@ -34,8 +34,6 @@ class WXShareMultiImageService : AccessibilityService() {
     // 当窗口发生的事件是我们配置监听的事件时,会回调此方法.会被调用多次
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
 
-        println(event)
-
         if (!ShareInfo.isAuto()) {
             return
         }
