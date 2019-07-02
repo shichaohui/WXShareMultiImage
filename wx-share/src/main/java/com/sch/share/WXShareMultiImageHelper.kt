@@ -112,6 +112,7 @@ object WXShareMultiImageHelper {
      * @param text 分享文本。
      */
     @JvmStatic
+    @JvmOverloads
     fun shareToSession(activity: Activity, imageList: List<Bitmap>, text: String = "") {
         activity.runOnUiThread {
             if (checkShareEnable(activity)) {
