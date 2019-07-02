@@ -45,11 +45,6 @@ public class WXShareMultiImageHelper {
     private static final String SHARE_IMG_UI = "com.tencent.mm.ui.tools.ShareImgUI";
     private static final String SHARE_TO_TIMELINE_UI = "com.tencent.mm.ui.tools.ShareToTimeLineUI";
 
-    // 微信 v6.7.3 版本的 versionCode 。
-    private static final int WX_V673 = 1360;
-    // 微信 v7.0.0 版本的 versionCode 。
-    private static final int WX_V700 = 1380;
-
     /**
      * 是否安装了微信。
      */
@@ -97,15 +92,26 @@ public class WXShareMultiImageHelper {
         return true;
     }
 
-    // 打开分享界面。
-    private static void openShareUI(Context context, String text, List<Uri> uriList, String ui) {
+    // 打开分享给好友界面
+    private static void openShareImgUI(Context context, String text, ArrayList<Uri> uriList) {
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_SEND_MULTIPLE);
-        intent.setComponent(new ComponentName(WX_PACKAGE_NAME, ui));
+        intent.setComponent(new ComponentName(WX_PACKAGE_NAME, SHARE_IMG_UI));
         intent.setType("image/*");
-        intent.putStringArrayListExtra(Intent.EXTRA_TEXT, new ArrayList<String>());
         intent.putExtra("Kdescription", text);
-        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, new ArrayList<>(uriList));
+        intent.putStringArrayListExtra(Intent.EXTRA_TEXT, new ArrayList<String>());
+        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uriList);
+        context.startActivity(intent);
+    }
+
+    // 打开分享到朋友圈界面
+    private static  void openShareToTimeLineUI(Context context, String text, Uri uri) {
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_SEND);
+        intent.setComponent(new ComponentName(WX_PACKAGE_NAME, SHARE_TO_TIMELINE_UI));
+        intent.setType("image/*");
+        intent.putExtra("Kdescription", text);
+        intent.putExtra(Intent.EXTRA_STREAM, uri);
         context.startActivity(intent);
     }
 
@@ -138,11 +144,11 @@ public class WXShareMultiImageHelper {
                     }
                     clearTmpFile(activity);
                     String dir = getTmpFileDir(activity);
-                    List<Uri> uriList = new ArrayList<>();
+                    ArrayList<Uri> uriList = new ArrayList<>();
                     for (Bitmap bitmap : imageList) {
                         uriList.add(Uri.fromFile(new File(saveBitmap(dir, bitmap))));
                     }
-                    openShareUI(activity, text, uriList, SHARE_IMG_UI);
+                    openShareImgUI(activity, text, uriList);
                 }
             }
         });
@@ -193,7 +199,7 @@ public class WXShareMultiImageHelper {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (!isAuto || getWXVersionCode(activity) < WX_V673) {
+                if (!isAuto) {
                     internalShareToTimeline(activity, text, imageList, false);
                 } else if (WXShareMultiImageHelper.isServiceEnabled(activity)) {
                     internalShareToTimeline(activity, text, imageList, true);
@@ -284,8 +290,12 @@ public class WXShareMultiImageHelper {
                                         activity.runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {
-                                                Collections.reverse(uriList);
-                                                internalShareToTimeline(activity, text, uriList, isAuto);
+                                                if (!isAuto) {
+                                                    shareToTimelineUIManual(activity, text);
+                                                } else {
+                                                    Collections.reverse(uriList);
+                                                    shareToTimelineUIAuto(activity, text, uriList);
+                                                }
                                                 dialog.cancel();
                                             }
                                         });
@@ -298,66 +308,33 @@ public class WXShareMultiImageHelper {
         });
     }
 
-    // 打开分享界面
-    private static void internalShareToTimeline(Context context, String text, List<Uri> uriList, boolean isAuto) {
-        int wxCode = getWXVersionCode(context);
-        if (wxCode < WX_V673) {
-            shareToTimelineUIV673Lower(context, text, uriList);
-        } else if (wxCode < WX_V700) {
-            shareToTimelineUIV673(context, text, uriList, isAuto);
-        } else {
-            shareToTimelineUIV700(context, text, uriList, isAuto);
-        }
-    }
-
-    // 分享到微信 v6.7.3 以下 。
-    private static void shareToTimelineUIV673Lower(Context context, String text, List<Uri> uriList) {
-        if (!TextUtils.isEmpty(text)) {
-            ClipboardUtil.setPrimaryClip(context, "", text);
-            Toast.makeText(context, "文字已复制到剪切板", Toast.LENGTH_LONG).show();
-        }
-        openShareUI(context, text, uriList, SHARE_TO_TIMELINE_UI);
-    }
-
-    // 分享到微信 v6.7.3 。
-    private static void shareToTimelineUIV673(Context context, String text, List<Uri> uriList, boolean isAuto) {
+    // 分享到微信朋友圈（自动模式）。
+    private static void shareToTimelineUIAuto(Context context, String text, List<Uri> uriList) {
 
         if (!TextUtils.isEmpty(text)) {
             ClipboardUtil.setPrimaryClip(context, "", text);
-            if (!isAuto) {
-                Toast.makeText(context, "长按粘贴文字\n点击加号添加剩余图片", Toast.LENGTH_LONG).show();
-            }
-        } else {
-            if (!isAuto) {
-                Toast.makeText(context, "点击加号添加剩余图片", Toast.LENGTH_LONG).show();
-            }
         }
 
-        ShareInfo.setAuto(isAuto);
+        ShareInfo.setAuto(true);
         ShareInfo.setText(text);
         ShareInfo.setImageCount(1, uriList.size() - 1);
 
-        openShareUI(context, text, uriList.subList(0, 1), SHARE_TO_TIMELINE_UI);
+        openShareToTimeLineUI(context, text, uriList.get(0));
     }
 
-    // 分享到微信 v7.0.0 。
-    private static void shareToTimelineUIV700(Context context, String text, List<Uri> uriList, boolean isAuto) {
+    // 分享到微信朋友圈（手动模式）。
+    private static void shareToTimelineUIManual(Context context, String text) {
 
         if (!TextUtils.isEmpty(text)) {
             ClipboardUtil.setPrimaryClip(context, "", text);
-            if (!isAuto) {
-                Toast.makeText(context, "文字已复制到剪切板\n图片已保存至相册\n打开朋友圈即可分享", Toast.LENGTH_LONG).show();
-            }
+            Toast.makeText(context, "请手动选择图片，长按粘贴内容！", Toast.LENGTH_LONG).show();
         } else {
-            if (!isAuto) {
-                Toast.makeText(context, "图片已保存至相册，打开朋友圈即可分享", Toast.LENGTH_LONG).show();
-            }
+            Toast.makeText(context, "请手动选择图片！", Toast.LENGTH_LONG).show();
         }
 
-        ShareInfo.setAuto(isAuto);
-        ShareInfo.setText(text);
-        ShareInfo.setImageCount(0, uriList.size());
+        ShareInfo.setAuto(false);
 
+        // 打开微信
         Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.setAction(Intent.ACTION_MAIN);
         intent.setComponent(new ComponentName(WX_PACKAGE_NAME, LAUNCHER_UI));
