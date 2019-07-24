@@ -12,12 +12,6 @@
 
 [下载Demo](./demo.apk)
 
-### 注意事项：
-
-* 未打开无障碍服务时调用分享 API 会弹窗引导用户打开无障碍服务。
-* 若用户选择不打开无障碍服务分享，则保存图片到手机并自动跳转至微信提示用户手动分享。
-
-
 ## Gradle 依赖
 
 ```groovy
@@ -67,8 +61,8 @@ WXShareMultiImageHelper.shareToSession(activity, bitmapList, text)
  * bitmapList: List<Bitmap> 待分享图片列表。
  * text: String 待分享文案。
  * isAuto: Boolean false 表示由用户手动粘贴文字、选择选图，不会执行无障碍操作；
- *                 true 表示使用无障碍操作，若用户未打开无障碍服务，将和 false 等同。
- *                   默认为 true 。
+ *                 true 表示使用无障碍操作（弹窗引导用户打开无障碍服务，若用户不打开，将和 false 等同）。
+ *                 默认为 true 。
  */
 
 WXShareMultiImageHelper.shareToTimeline(activity, bitmapList)
