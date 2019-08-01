@@ -95,6 +95,8 @@ class WXShareMultiImageService : AccessibilityService() {
         }
         if (ClipboardUtil.getPrimaryClip(this) != ShareInfo.options.text) {
             return
+        } else {
+            ShareInfo.options.text = ""
         }
         rootNodeInfo.getChild(EditText::class.java.name)?.run {
             // 粘贴剪切板内容
@@ -105,6 +107,9 @@ class WXShareMultiImageService : AccessibilityService() {
 
     // 准备打开相册
     private fun prepareOpenAlbum(rootNodeInfo: AccessibilityNodeInfo) {
+        if (ShareInfo.waitingImageCount <= 0) {
+            return
+        }
         if (prepareOpenAlbumFlag == rootNodeInfo.hashCode()) {
             return
         } else {
@@ -164,11 +169,13 @@ class WXShareMultiImageService : AccessibilityService() {
 
     // 发布
     private fun post(rootNodeInfo: AccessibilityNodeInfo) {
-        if (postFlag== rootNodeInfo.hashCode()) {
+        if (postFlag == rootNodeInfo.hashCode()) {
             return
         } else {
-            postFlag= rootNodeInfo.hashCode()
+            postFlag = rootNodeInfo.hashCode()
         }
+        // 准备发布
+        ShareInfo.options.isAutoPost = false
         // 点击发表按钮。
         rootNodeInfo.findAccessibilityNodeInfosByText(POST_ZH)
                 .getOrElse(0) { rootNodeInfo.findAccessibilityNodeInfosByText(POST_EN).getOrNull(0) }
