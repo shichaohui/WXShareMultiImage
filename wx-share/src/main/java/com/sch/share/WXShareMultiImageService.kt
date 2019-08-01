@@ -28,8 +28,9 @@ private const val SELECT_FROM_ALBUM_EN_2 = "Choose from Album"
  */
 class WXShareMultiImageService : AccessibilityService() {
 
-    private var prevSource: AccessibilityNodeInfo? = null
-    private var prevListView: AccessibilityNodeInfo? = null
+    private var textFlag = 0
+    private var prepareOpenAlbumFlag = 0
+    private var openAlbumFlag = 0
 
     // 当窗口发生的事件是我们配置监听的事件时,会回调此方法.会被调用多次
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
@@ -66,28 +67,27 @@ class WXShareMultiImageService : AccessibilityService() {
 
     // 处理图文分享界面。
     private fun processingSnsUploadUI(event: AccessibilityEvent) {
-        // 过滤重复事件。
-        if (event.source == prevSource) {
-            return
-        }
-        prevSource = event.source
 
         val rootNodeInfo = getRootNodeInfo() ?: return
 
         setTextToUI(rootNodeInfo)
 
-        if (ShareInfo.waitingImageCount <= 0) {
-            return
+        if (ShareInfo.waitingImageCount > 0) {
+            prepareOpenAlbum(rootNodeInfo)
         }
-        // 自动点击添加图片的按钮。
-        rootNodeInfo.getChild(GridView::class.java.name)
-                ?.getChild(1)
-                ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
     // 显示待分享文字。
     private fun setTextToUI(rootNodeInfo: AccessibilityNodeInfo) {
-        if (!ShareInfo.hasText() || ClipboardUtil.getPrimaryClip(this) != ShareInfo.options.text) {
+        if (textFlag == rootNodeInfo.hashCode()) {
+            return
+        } else {
+            textFlag = rootNodeInfo.hashCode()
+        }
+        if (!ShareInfo.hasText()) {
+            return
+        }
+        if (ClipboardUtil.getPrimaryClip(this) != ShareInfo.options.text) {
             return
         }
         rootNodeInfo.getChild(EditText::class.java.name)?.run {
@@ -97,21 +97,33 @@ class WXShareMultiImageService : AccessibilityService() {
         }
     }
 
+    // 准备打开相册
+    private fun prepareOpenAlbum(rootNodeInfo: AccessibilityNodeInfo) {
+        if (prepareOpenAlbumFlag == rootNodeInfo.hashCode()) {
+            return
+        } else {
+            prepareOpenAlbumFlag = rootNodeInfo.hashCode()
+        }
+        // 自动点击添加图片的按钮。
+        rootNodeInfo.getChild(GridView::class.java.name)
+                ?.getChild(1)
+                ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
     // 打开相册。
     private fun openAlbum(event: AccessibilityEvent) {
         if (ShareInfo.waitingImageCount <= 0) {
             return
         }
         val listView = event.source
-        // 过滤重复事件。
-        if (listView == null || listView == prevListView) {
+        if (openAlbumFlag == listView.hashCode()) {
             return
+        } else {
+            openAlbumFlag = listView.hashCode()
         }
-        prevListView = listView
-
         // 查找从相册选择选项并点击。
         for (i in (0 until listView.childCount)) {
-            val child = listView.getChild(i)
+            val child = listView.getChild(i) ?: continue
             if (child.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_ZH).isNotEmpty() ||
                     child.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_EN_2).isNotEmpty() ||
                     child.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_EN).isNotEmpty()
@@ -135,13 +147,13 @@ class WXShareMultiImageService : AccessibilityService() {
                 .map { gridView.getChild(it).getChild(View::class.java.name) }
                 .forEach { it?.performAction(AccessibilityNodeInfo.ACTION_CLICK) }
 
+        // 选图结束。
+        ShareInfo.setImageCount(0, 0)
+
         // 点击完成按钮。
         rootNodeInfo.findAccessibilityNodeInfosByText(DONE_ZH)
                 .getOrElse(0) { rootNodeInfo.findAccessibilityNodeInfosByText(DONE_EN).getOrNull(0) }
                 ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-
-        // 自动分享结束。
-        ShareInfo.setImageCount(0, 0)
     }
 
     // 查找指定类名的父节点。
