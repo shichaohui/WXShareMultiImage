@@ -127,7 +127,7 @@ class WXShareMultiImageService : AccessibilityService() {
             return
         }
         val listView = event.source
-        if (openAlbumFlag == listView.hashCode()) {
+        if (listView == null || openAlbumFlag == listView.hashCode()) {
             return
         } else {
             openAlbumFlag = listView.hashCode()
