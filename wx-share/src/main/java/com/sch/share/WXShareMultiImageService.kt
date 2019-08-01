@@ -19,6 +19,7 @@ private const val DONE_EN = "Done"
 
 private const val SELECT_FROM_ALBUM_ZH = "从相册选择"
 private const val SELECT_FROM_ALBUM_EN = "Select Photos or Videos from Album"
+private const val SELECT_FROM_ALBUM_EN_2 = "Choose from Album"
 
 /**
  * Created by StoneHui on 2018/10/22.
@@ -108,12 +109,17 @@ class WXShareMultiImageService : AccessibilityService() {
         }
         prevListView = listView
 
-        // 点击从相册选择。
-        listView.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_ZH)
-                .getOrElse(0) { listView.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_EN).getOrNull(0) }
-                ?.let {
-                    listView.getChild(1)?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                }
+        // 查找从相册选择选项并点击。
+        for (i in (0 until listView.childCount)) {
+            val child = listView.getChild(i)
+            if (child.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_ZH).isNotEmpty() ||
+                    child.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_EN_2).isNotEmpty() ||
+                    child.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_EN).isNotEmpty()
+            ) {
+                child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                break
+            }
+        }
     }
 
     // 选择图片。
