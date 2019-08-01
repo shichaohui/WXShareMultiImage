@@ -14,12 +14,15 @@ import java.util.*
 private const val SNS_UPLOAD_UI = "com.tencent.mm.plugin.sns.ui.SnsUploadUI"
 private const val ALBUM_PREVIEW_UI = "com.tencent.mm.plugin.gallery.ui.AlbumPreviewUI"
 
-private const val DONE_ZH = "完成"
-private const val DONE_EN = "Done"
-
 private const val SELECT_FROM_ALBUM_ZH = "从相册选择"
 private const val SELECT_FROM_ALBUM_EN = "Select Photos or Videos from Album"
 private const val SELECT_FROM_ALBUM_EN_2 = "Choose from Album"
+
+private const val DONE_ZH = "完成"
+private const val DONE_EN = "Done"
+
+private const val POST_ZH = "发表"
+private const val POST_EN = "Post"
 
 /**
  * Created by StoneHui on 2018/10/22.
@@ -31,6 +34,7 @@ class WXShareMultiImageService : AccessibilityService() {
     private var textFlag = 0
     private var prepareOpenAlbumFlag = 0
     private var openAlbumFlag = 0
+    private var postFlag = 0
 
     // 当窗口发生的事件是我们配置监听的事件时,会回调此方法.会被调用多次
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
@@ -74,6 +78,8 @@ class WXShareMultiImageService : AccessibilityService() {
 
         if (ShareInfo.waitingImageCount > 0) {
             prepareOpenAlbum(rootNodeInfo)
+        } else if (ShareInfo.options.isAutoPost) {
+            post(rootNodeInfo)
         }
     }
 
@@ -153,6 +159,19 @@ class WXShareMultiImageService : AccessibilityService() {
         // 点击完成按钮。
         rootNodeInfo.findAccessibilityNodeInfosByText(DONE_ZH)
                 .getOrElse(0) { rootNodeInfo.findAccessibilityNodeInfosByText(DONE_EN).getOrNull(0) }
+                ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
+    // 发布
+    private fun post(rootNodeInfo: AccessibilityNodeInfo) {
+        if (postFlag== rootNodeInfo.hashCode()) {
+            return
+        } else {
+            postFlag= rootNodeInfo.hashCode()
+        }
+        // 点击发表按钮。
+        rootNodeInfo.findAccessibilityNodeInfosByText(POST_ZH)
+                .getOrElse(0) { rootNodeInfo.findAccessibilityNodeInfosByText(POST_EN).getOrNull(0) }
                 ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 

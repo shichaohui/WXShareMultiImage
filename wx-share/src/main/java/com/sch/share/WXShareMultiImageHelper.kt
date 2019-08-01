@@ -362,6 +362,10 @@ object WXShareMultiImageHelper {
          * 是否自动填充文本和图片
          */
         var isAutoFill = true
+        /**
+         * 是否自动发布
+         */
+        var isAutoPost = false
     }
 
 }
