@@ -133,22 +133,23 @@ object WXShareMultiImageHelper {
      *
      * @param activity [Context]
      * @param imageList 图片列表。
-     * @param text 分享文本。
-     * @param isAuto 是否由 SDK 自动粘贴文字、选择选图。
+     * @param options [Options] 可选项。
      */
     @JvmStatic
     @JvmOverloads
-    fun shareToTimeline(activity: Activity, imageList: List<Bitmap>, text: String = "", isAuto: Boolean = true) {
+    fun shareToTimeline(activity: Activity, imageList: List<Bitmap>, options: Options = Options()) {
         activity.runOnUiThread {
-            if (!isAuto) {
-                internalShareToTimeline(activity, text, imageList, false)
+            if (!options.isAutoFill) {
+                internalShareToTimeline(activity, imageList, options)
             } else if (isServiceEnabled(activity)) {
-                internalShareToTimeline(activity, text, imageList, true)
+                internalShareToTimeline(activity, imageList, options)
             } else {
                 showOpenServiceDialog(
                         activity,
-                        { openService(activity) { internalShareToTimeline(activity, text, imageList, it) } },
-                        { internalShareToTimeline(activity, text, imageList, false) }
+                        { openService(activity) {
+                            internalShareToTimeline(activity, imageList, options.apply { isAutoFill = it })
+                        } },
+                        { internalShareToTimeline(activity, imageList, options.apply { isAutoFill = false }) }
                 )
             }
         }
@@ -175,12 +176,10 @@ object WXShareMultiImageHelper {
      * 分享到微信朋友圈。
      *
      * @param activity [Context]
-     * @param text 分享文本。
      * @param imageList 图片列表。
-     * @param isAuto false 表示由用户手动粘贴文字、选择选图，不会执行无障碍操作；
-     *               true 表示使用无障碍操作，若用户未打开无障碍服务，将和 false 等同。
+     * @param options [Options] 可选项。
      */
-    private fun internalShareToTimeline(activity: Activity, text: String, imageList: List<Bitmap>, isAuto: Boolean) {
+    private fun internalShareToTimeline(activity: Activity, imageList: List<Bitmap>, options: Options) {
 
         activity.runOnUiThread {
             if (!checkShareEnable(activity)) {
@@ -207,10 +206,10 @@ object WXShareMultiImageHelper {
                         // 扫描结束执行分享。
                         activity.runOnUiThread {
                             dialog.cancel()
-                            if (!isAuto) {
-                                shareToTimelineUIManual(activity, text)
+                            if (options.isAutoFill) {
+                                shareToTimelineUIAuto(activity, options, uriList.reversed())
                             } else {
-                                shareToTimelineUIAuto(activity, text, uriList.reversed())
+                                shareToTimelineUIManual(activity, options)
                             }
                         }
                     }
@@ -223,30 +222,27 @@ object WXShareMultiImageHelper {
     }
 
     // 分享到微信朋友圈（自动模式）。
-    private fun shareToTimelineUIAuto(context: Context, text: String, uriList: List<Uri>) {
+    private fun shareToTimelineUIAuto(context: Context, options: Options, uriList: List<Uri>) {
 
-        if (!TextUtils.isEmpty(text)) {
-            ClipboardUtil.setPrimaryClip(context, "", text)
+        if (!TextUtils.isEmpty(options.text)) {
+            ClipboardUtil.setPrimaryClip(context, "", options.text)
         }
 
-        ShareInfo.isAuto = true
-        ShareInfo.text = text
+        ShareInfo.options = options
         ShareInfo.setImageCount(1, uriList.size - 1)
 
-        openShareToTimeLineUI(context, text, uriList[0])
+        openShareToTimeLineUI(context, options.text, uriList[0])
     }
 
     // 分享到微信朋友圈（手动模式）。
-    private fun shareToTimelineUIManual(context: Context, text: String) {
+    private fun shareToTimelineUIManual(context: Context, options: Options) {
 
-        if (!TextUtils.isEmpty(text)) {
-            ClipboardUtil.setPrimaryClip(context, "", text)
+        if (!TextUtils.isEmpty(options.text)) {
+            ClipboardUtil.setPrimaryClip(context, "", options.text)
             Toast.makeText(context, "请手动选择图片，长按粘贴内容！", Toast.LENGTH_LONG).show()
         } else {
             Toast.makeText(context, "请手动选择图片！", Toast.LENGTH_LONG).show()
         }
-
-        ShareInfo.isAuto = false
 
         // 打开微信
         val intent = Intent(Intent.ACTION_MAIN)
@@ -352,6 +348,20 @@ object WXShareMultiImageHelper {
          * @param isOpening 服务是否开启。
          */
         fun onResult(isOpening: Boolean)
+    }
+
+    /**
+     * 分享可选择项
+     */
+    class Options {
+        /**
+         * 待分享文本
+         */
+        var text = ""
+        /**
+         * 是否自动填充文本和图片
+         */
+        var isAutoFill = true
     }
 
 }

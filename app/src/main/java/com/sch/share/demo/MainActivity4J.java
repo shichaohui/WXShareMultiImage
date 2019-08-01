@@ -125,7 +125,9 @@ public class MainActivity4J extends AppCompatActivity implements View.OnClickLis
 
     // 分享到朋友圈。
     private void shareToTimeline(List<Bitmap> bitmapList) {
-        WXShareMultiImageHelper.shareToTimeline(this, bitmapList, tvShareContent.getText().toString());
+        WXShareMultiImageHelper.Options options = new WXShareMultiImageHelper.Options();
+        options.setText(tvShareContent.getText().toString());
+        WXShareMultiImageHelper.shareToTimeline(this, bitmapList, options);
     }
 
     private void loadImage(final OnLoadImageEndCallback callback) {

@@ -83,7 +83,10 @@ class MainActivity : AppCompatActivity() {
     // 分享到朋友圈。
     private fun shareToTimeline() {
         share {
-            WXShareMultiImageHelper.shareToTimeline(this, it.toMutableList(), tvShareContent.text.toString())
+            val options = WXShareMultiImageHelper.Options().apply {
+                text = tvShareContent.text.toString()
+            }
+            WXShareMultiImageHelper.shareToTimeline(this, it.toMutableList(), options)
         }
     }
 

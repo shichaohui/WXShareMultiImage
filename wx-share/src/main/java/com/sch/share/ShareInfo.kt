@@ -11,15 +11,15 @@ import android.text.TextUtils
 internal object ShareInfo {
 
     /**
-     * 待分享文本
+     * 分享的可选项配置
      */
-    var text = ""
+    var options = WXShareMultiImageHelper.Options()
 
     /**
      * 是否有待分享文本
      */
     fun hasText(): Boolean {
-        return !TextUtils.isEmpty(text)
+        return !TextUtils.isEmpty(options.text)
     }
 
     /**
@@ -44,10 +44,5 @@ internal object ShareInfo {
         ShareInfo.selectedImageCount = selectedImageCount
         ShareInfo.waitingImageCount = waitingImageCount
     }
-
-    /**
-     * 是否自动操作。
-     */
-    var isAuto = true
 
 }
