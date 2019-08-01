@@ -229,8 +229,8 @@ object WXShareMultiImageHelper {
             ClipboardUtil.setPrimaryClip(context, "", text)
         }
 
-        ShareInfo.setAuto(true)
-        ShareInfo.setText(text)
+        ShareInfo.isAuto = true
+        ShareInfo.text = text
         ShareInfo.setImageCount(1, uriList.size - 1)
 
         openShareToTimeLineUI(context, text, uriList[0])
@@ -246,7 +246,7 @@ object WXShareMultiImageHelper {
             Toast.makeText(context, "请手动选择图片！", Toast.LENGTH_LONG).show()
         }
 
-        ShareInfo.setAuto(false)
+        ShareInfo.isAuto = false
 
         // 打开微信
         val intent = Intent(Intent.ACTION_MAIN)

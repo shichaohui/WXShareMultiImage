@@ -7,10 +7,18 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.EditText
 import android.widget.GridView
-import android.widget.ImageButton
 import android.widget.ListView
 import com.sch.share.utils.ClipboardUtil
 import java.util.*
+
+private const val SNS_UPLOAD_UI = "com.tencent.mm.plugin.sns.ui.SnsUploadUI"
+private const val ALBUM_PREVIEW_UI = "com.tencent.mm.plugin.gallery.ui.AlbumPreviewUI"
+
+private const val DONE_ZH = "完成"
+private const val DONE_EN = "Done"
+
+private const val SELECT_FROM_ALBUM_ZH = "从相册选择"
+private const val SELECT_FROM_ALBUM_EN = "Select Photos or Videos from Album"
 
 /**
  * Created by StoneHui on 2018/10/22.
@@ -19,22 +27,13 @@ import java.util.*
  */
 class WXShareMultiImageService : AccessibilityService() {
 
-    private val SNS_UPLOAD_UI = "com.tencent.mm.plugin.sns.ui.SnsUploadUI"
-    private val ALBUM_PREVIEW_UI = "com.tencent.mm.plugin.gallery.ui.AlbumPreviewUI"
-
-    private val DONE_ZH = "完成"
-    private val DONE_EN = "Done"
-
-    private val SELECT_FROM_ALBUM_ZH = "从相册选择"
-    private val SELECT_FROM_ALBUM_EN = "Select Photos or Videos from Album"
-
     private var prevSource: AccessibilityNodeInfo? = null
     private var prevListView: AccessibilityNodeInfo? = null
 
     // 当窗口发生的事件是我们配置监听的事件时,会回调此方法.会被调用多次
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
 
-        if (!ShareInfo.isAuto()) {
+        if (!ShareInfo.isAuto) {
             return
         }
 
@@ -76,7 +75,7 @@ class WXShareMultiImageService : AccessibilityService() {
 
         setTextToUI(rootNodeInfo)
 
-        if (ShareInfo.getWaitingImageCount() <= 0) {
+        if (ShareInfo.waitingImageCount <= 0) {
             return
         }
         // 自动点击添加图片的按钮。
@@ -87,7 +86,7 @@ class WXShareMultiImageService : AccessibilityService() {
 
     // 显示待分享文字。
     private fun setTextToUI(rootNodeInfo: AccessibilityNodeInfo) {
-        if (!ShareInfo.hasText() || ClipboardUtil.getPrimaryClip(this) != ShareInfo.getText()) {
+        if (!ShareInfo.hasText() || ClipboardUtil.getPrimaryClip(this) != ShareInfo.text) {
             return
         }
         rootNodeInfo.getChild(EditText::class.java.name)?.run {
@@ -99,7 +98,7 @@ class WXShareMultiImageService : AccessibilityService() {
 
     // 打开相册。
     private fun openAlbum(event: AccessibilityEvent) {
-        if (ShareInfo.getWaitingImageCount() <= 0) {
+        if (ShareInfo.waitingImageCount <= 0) {
             return
         }
         val listView = event.source
@@ -119,14 +118,14 @@ class WXShareMultiImageService : AccessibilityService() {
 
     // 选择图片。
     private fun selectImage(event: AccessibilityEvent) {
-        if (ShareInfo.getWaitingImageCount() <= 0) {
+        if (ShareInfo.waitingImageCount <= 0) {
             return
         }
         val rootNodeInfo = getRootNodeInfo() ?: return
         val gridView = rootNodeInfo.getChild(GridView::class.java.name) ?: return
 
-        val maxIndex = ShareInfo.getSelectedImageCount() + ShareInfo.getWaitingImageCount() - 1
-        (ShareInfo.getSelectedImageCount()..maxIndex)
+        val maxIndex = ShareInfo.selectedImageCount + ShareInfo.waitingImageCount - 1
+        (ShareInfo.selectedImageCount..maxIndex)
                 .map { gridView.getChild(it).getChild(View::class.java.name) }
                 .forEach { it?.performAction(AccessibilityNodeInfo.ACTION_CLICK) }
 

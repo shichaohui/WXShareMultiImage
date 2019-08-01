@@ -136,7 +136,7 @@ public class WXShareMultiImageHelper {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ShareInfo.setAuto(false);
+                ShareInfo.getInstance().setAuto(false);
                 if (checkShareEnable(activity)) {
                     if (!TextUtils.isEmpty(text)) {
                         ClipboardUtil.setPrimaryClip(activity, "", text);
@@ -315,9 +315,9 @@ public class WXShareMultiImageHelper {
             ClipboardUtil.setPrimaryClip(context, "", text);
         }
 
-        ShareInfo.setAuto(true);
-        ShareInfo.setText(text);
-        ShareInfo.setImageCount(1, uriList.size() - 1);
+        ShareInfo.getInstance().setAuto(true);
+        ShareInfo.getInstance().setText(text);
+        ShareInfo.getInstance().setImageCount(1, uriList.size() - 1);
 
         openShareToTimeLineUI(context, text, uriList.get(0));
     }
@@ -332,7 +332,7 @@ public class WXShareMultiImageHelper {
             Toast.makeText(context, "请手动选择图片！", Toast.LENGTH_LONG).show();
         }
 
-        ShareInfo.setAuto(false);
+        ShareInfo.getInstance().setAuto(false);
 
         // 打开微信
         Intent intent = new Intent(Intent.ACTION_MAIN);

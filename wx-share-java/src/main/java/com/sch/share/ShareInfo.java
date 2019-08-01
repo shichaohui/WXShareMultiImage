@@ -7,36 +7,58 @@ import android.text.TextUtils;
  * <p>
  * 分享信息。
  */
-public class ShareInfo {
+class ShareInfo {
 
-    private static String text = "";
-    private static int waitingImageCount = 0;
-    private static int selectedImageCount = 0;
-    private static boolean isAuto = true;
+    private static class Singleton {
+        static ShareInfo instance = new ShareInfo();
+    }
 
-    protected static boolean hasText() {
+    private ShareInfo() {
+    }
+
+    static ShareInfo getInstance() {
+        return Singleton.instance;
+    }
+
+    private String text = "";
+    private int waitingImageCount = 0;
+    private int selectedImageCount = 0;
+    private boolean isAuto = true;
+
+    /**
+     * 是否有待分享文本
+     */
+    boolean hasText() {
         return !TextUtils.isEmpty(text);
     }
 
-    protected static String getText() {
+    /**
+     * 获取待分享文本
+     */
+    String getText() {
         return text;
     }
 
-    protected static void setText(String text) {
-        ShareInfo.text = text;
+    /**
+     * 设置待分享文本
+     *
+     * @param text 待分享文本
+     */
+    void setText(String text) {
+        this.text = text;
     }
 
     /**
      * 获取待选择图片数量。
      */
-    protected static int getWaitingImageCount() {
+    int getWaitingImageCount() {
         return waitingImageCount;
     }
 
     /**
      * 获取已选择图片数量。
      */
-    protected static int getSelectedImageCount() {
+    int getSelectedImageCount() {
         return selectedImageCount;
     }
 
@@ -46,23 +68,23 @@ public class ShareInfo {
      * @param selectedImageCount 已选择图片数量。
      * @param waitingImageCount  待选择图片数量。
      */
-    protected static void setImageCount(int selectedImageCount, int waitingImageCount) {
-        ShareInfo.selectedImageCount = selectedImageCount;
-        ShareInfo.waitingImageCount = waitingImageCount;
+    void setImageCount(int selectedImageCount, int waitingImageCount) {
+        this.selectedImageCount = selectedImageCount;
+        this.waitingImageCount = waitingImageCount;
     }
 
     /**
      * 是否自动操作。
      */
-    protected static boolean isAuto() {
+    boolean isAuto() {
         return isAuto;
     }
 
     /**
      * 设置是否自动操作。
      */
-    public static void setAuto(boolean isAuto) {
-        ShareInfo.isAuto = isAuto;
+    void setAuto(boolean isAuto) {
+        this.isAuto = isAuto;
     }
 
 }

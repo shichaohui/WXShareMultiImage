@@ -8,12 +8,12 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityWindowInfo;
 import android.widget.EditText;
 import android.widget.GridView;
-import android.widget.ImageButton;
 import android.widget.ListView;
 
 import com.sch.share.utils.ClipboardUtil;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by StoneHui on 2018/12/12.
@@ -38,7 +38,7 @@ public class WXShareMultiImageService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
 
-        if (!ShareInfo.isAuto()) {
+        if (!ShareInfo.getInstance().isAuto()) {
             return;
         }
 
@@ -83,7 +83,7 @@ public class WXShareMultiImageService extends AccessibilityService {
 
         setTextToUI(rootNodeInfo);
 
-        if (ShareInfo.getWaitingImageCount() <= 0) {
+        if (ShareInfo.getInstance().getWaitingImageCount() <= 0) {
             return;
         }
 
@@ -97,7 +97,9 @@ public class WXShareMultiImageService extends AccessibilityService {
 
     // 显示待分享文字。
     private void setTextToUI(AccessibilityNodeInfo rootNodeInfo) {
-        if (!ShareInfo.hasText() || !ClipboardUtil.getPrimaryClip(this).equals(ShareInfo.getText())) {
+        if (!ShareInfo.getInstance().hasText() ||
+                !ClipboardUtil.getPrimaryClip(this).equals(ShareInfo.getInstance().getText())
+        ) {
             return;
         }
         // 设置待分享文字。
@@ -107,12 +109,12 @@ public class WXShareMultiImageService extends AccessibilityService {
             editText.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
             editText.performAction(AccessibilityNodeInfo.ACTION_PASTE);
         }
-        ShareInfo.setText("");
+        ShareInfo.getInstance().setText("");
     }
 
     // 打开相册。
     private void openAlbum(AccessibilityEvent event) {
-        if (ShareInfo.getWaitingImageCount() <= 0) {
+        if (ShareInfo.getInstance().getWaitingImageCount() <= 0) {
             return;
         }
         AccessibilityNodeInfo listView = event.getSource();
@@ -134,7 +136,7 @@ public class WXShareMultiImageService extends AccessibilityService {
 
     // 选择图片。
     private void selectImage(AccessibilityEvent event) {
-        if (ShareInfo.getWaitingImageCount() <= 0) {
+        if (ShareInfo.getInstance().getWaitingImageCount() <= 0) {
             return;
         }
         AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo();
@@ -145,8 +147,8 @@ public class WXShareMultiImageService extends AccessibilityService {
         if (gridView == null) {
             return;
         }
-        int index = ShareInfo.getSelectedImageCount();
-        int maxIndex = ShareInfo.getSelectedImageCount() + ShareInfo.getWaitingImageCount();
+        int index = ShareInfo.getInstance().getSelectedImageCount();
+        int maxIndex = ShareInfo.getInstance().getSelectedImageCount() + ShareInfo.getInstance().getWaitingImageCount();
         for (; index < maxIndex; index++) {
             AccessibilityNodeInfo viewNode = findNodeInfo(gridView.getChild(index), View.class.getName());
             if (viewNode != null) {
@@ -164,7 +166,7 @@ public class WXShareMultiImageService extends AccessibilityService {
         }
 
         // 自动分享结束。
-        ShareInfo.setImageCount(0, 0);
+        ShareInfo.getInstance().setImageCount(0, 0);
     }
 
     // 查找指定类名的父节点。
