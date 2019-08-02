@@ -31,7 +31,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
-//    implementation 'com.sch.share:wx-share:1.0.7'
-    implementation project(':wx-share')
+    implementation 'com.sch.share:wx-share:1.0.8'
+//    implementation project(':wx-share')
 //    implementation project(':wx-share-java')
 }
