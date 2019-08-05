@@ -146,9 +146,11 @@ object WXShareMultiImageHelper {
             } else {
                 showOpenServiceDialog(
                         activity,
-                        { openService(activity) {
-                            internalShareToTimeline(activity, imageList, options.apply { isAutoFill = it })
-                        } },
+                        {
+                            openService(activity) {
+                                internalShareToTimeline(activity, imageList, options.apply { isAutoFill = it })
+                            }
+                        },
                         { internalShareToTimeline(activity, imageList, options.apply { isAutoFill = false }) }
                 )
             }
@@ -186,9 +188,14 @@ object WXShareMultiImageHelper {
                 return@runOnUiThread
             }
 
-            val dialog = ProgressDialog(activity)
-            dialog.setMessage("请稍候...")
-            dialog.show()
+            var dialog: ProgressDialog? = null
+            if (options.needShowLoading) {
+                dialog = ProgressDialog(activity).apply {
+                    setCancelable(false)
+                    setMessage("请稍候...")
+                    show()
+                }
+            }
 
             thread(true) {
 
@@ -205,7 +212,7 @@ object WXShareMultiImageHelper {
                     if (uriList.size >= paths.size) {
                         // 扫描结束执行分享。
                         activity.runOnUiThread {
-                            dialog.cancel()
+                            dialog?.cancel()
                             if (options.isAutoFill) {
                                 shareToTimelineUIAuto(activity, options, uriList.reversed())
                             } else {
@@ -366,6 +373,11 @@ object WXShareMultiImageHelper {
          * 是否自动发布
          */
         var isAutoPost = false
+        /**
+         * 是否显示进度对话框
+         */
+        var needShowLoading = true
+
     }
 
 }
