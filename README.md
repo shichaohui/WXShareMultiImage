@@ -4,7 +4,7 @@
 
 [ ![Download](https://api.bintray.com/packages/shichaohui/maven/wx-share/images/download.svg) ](https://bintray.com/shichaohui/maven/wx-share/_latestVersion)
 
-> v1.0.8 新增了朋友圈自动发表的功能，优化了 API `shareToTimeline()` 的传参方式，具体请继续看本文档。
+> v1.0.8 开始新增朋友圈自动发表的功能，优化了 API `shareToTimeline()` 的传参方式，具体内容请继续看本文档。
 >
 > 如果不使用新版本，请查看 [v1.0.7 文档](./README_highest_v1.0.7.md) 。
 
@@ -18,7 +18,7 @@
 ## Gradle 依赖
 
 ```groovy
-implementation 'com.sch.share:wx-share:1.0.8'
+implementation 'com.sch.share:wx-share:1.0.9'
 ```
 
 ## 配置
@@ -63,19 +63,24 @@ val options = WXShareMultiImageHelper.Options().apply {
     text = "待分享文案"
 	  isAutoFill = true
     isAutoPost = false
+    needShowLoading = true
+    onPrepareOpenWXListener = {
+        // do something
+    }
 }
 WXShareMultiImageHelper.shareToTimeline(activity, bitmapList, options)
 ```
 `WXShareMultiImageHelper.Options()` 是分享可选配置。
 
 * `text`：待分享文案，默认空字符串 "" 。
-
-* `isAutoFill`：是否自动填充文案和图片，默认 true。
+* `isAutoFill`：是否自动填充文案和图片，默认 true 。
   * **true**：自动填充文案和图片。尝试使用无障碍服务，若无障碍服务未打开，会弹窗引导用户打开服务。
   * **false：**手动填充文案和图片。
 * `isAutoPost`：填充文案和图片后是否自动发布，默认 false。该属性仅在 `isAutoFill` 为 true 时有效。
   * **true：**自动发布。
   * **false：**手动发布。
+* `needShowLoading` ：是否显示默认的加载进度对话框，默认 true 。
+* `onPrepareOpenWXListener`：本次分享即将打开微信时的回调。可以在此处关闭自定义的加载进度对话框。
 
 ### 清理临时文件
 
