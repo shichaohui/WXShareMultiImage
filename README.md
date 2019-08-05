@@ -61,7 +61,7 @@ WXShareMultiImageHelper.shareToTimeline(activity, bitmapList)
 // 分享图片和文字，并设置本次分享是否，是否自动发布
 val options = WXShareMultiImageHelper.Options().apply {
     text = "待分享文案"
-	  isAutoFill = true
+    isAutoFill = true
     isAutoPost = false
     needShowLoading = true
     onPrepareOpenWXListener = {
@@ -75,7 +75,7 @@ WXShareMultiImageHelper.shareToTimeline(activity, bitmapList, options)
 * `text`：待分享文案，默认空字符串 "" 。
 * `isAutoFill`：是否自动填充文案和图片，默认 true 。
   * **true**：自动填充文案和图片。尝试使用无障碍服务，若无障碍服务未打开，会弹窗引导用户打开服务。
-  * **false：**手动填充文案和图片。
+  * **false**：手动填充文案和图片。
 * `isAutoPost`：填充文案和图片后是否自动发布，默认 false。该属性仅在 `isAutoFill` 为 true 时有效。
   * **true：**自动发布。
   * **false：**手动发布。
