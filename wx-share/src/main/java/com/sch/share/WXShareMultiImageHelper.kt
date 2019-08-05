@@ -213,6 +213,7 @@ object WXShareMultiImageHelper {
                         // 扫描结束执行分享。
                         activity.runOnUiThread {
                             dialog?.cancel()
+                            options.onPrepareOpenWXListener?.invoke()
                             if (options.isAutoFill) {
                                 shareToTimelineUIAuto(activity, options, uriList.reversed())
                             } else {
@@ -377,6 +378,25 @@ object WXShareMultiImageHelper {
          * 是否显示进度对话框
          */
         var needShowLoading = true
+
+        /**
+         * 设置准备打开微信时的回调
+         */
+        var onPrepareOpenWXListener: (() -> Unit)? = null
+
+        /**
+         * 设置准备打开微信时的回调
+         */
+        fun setOnPrepareOpenWXListener(_onPrepareOpenWXListener: OnPrepareOpenWXListener) {
+            this.onPrepareOpenWXListener = { _onPrepareOpenWXListener.onPrepareOpenWX() }
+        }
+
+        /**
+         * 准备打开微信时的回调
+         */
+        interface OnPrepareOpenWXListener {
+            fun onPrepareOpenWX()
+        }
 
     }
 
