@@ -18,7 +18,7 @@
 ## Gradle 依赖
 
 ```groovy
-implementation 'com.sch.share:wx-share:1.0.9'
+implementation 'com.sch.share:wx-share:1.0.10'
 ```
 
 ## 配置
@@ -77,8 +77,8 @@ WXShareMultiImageHelper.shareToTimeline(activity, bitmapList, options)
   * **true**：自动填充文案和图片。尝试使用无障碍服务，若无障碍服务未打开，会弹窗引导用户打开服务。
   * **false**：手动填充文案和图片。
 * `isAutoPost`：填充文案和图片后是否自动发布，默认 false。该属性仅在 `isAutoFill` 为 true 时有效。
-  * **true：**自动发布。
-  * **false：**手动发布。
+  * **true**：自动发布。
+  * **false**：手动发布。
 * `needShowLoading` ：是否显示默认的加载进度对话框，默认 true 。
 * `onPrepareOpenWXListener`：本次分享即将打开微信时的回调。可以在此处关闭自定义的加载进度对话框。
 
