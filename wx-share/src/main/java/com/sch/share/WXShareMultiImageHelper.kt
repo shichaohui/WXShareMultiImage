@@ -116,16 +116,35 @@ object WXShareMultiImageHelper {
     fun shareToSession(activity: Activity, imageList: List<Bitmap>, text: String = "") {
         activity.runOnUiThread {
             if (checkShareEnable(activity)) {
-                if (!TextUtils.isEmpty(text)) {
-                    ClipboardUtil.setPrimaryClip(activity, "", text)
-                    Toast.makeText(activity, "请长按粘贴内容", Toast.LENGTH_LONG).show()
-                }
-                clearTmpFile(activity)
                 val dir = getTmpFileDir(activity)
-                val uriList = imageList.map { Uri.fromFile(File(saveBitmap(dir, it))) }
-                openShareImgUI(activity, text, uriList)
+                internalShareToSession(activity, imageList.map { File(saveBitmap(dir, it)) }, text)
             }
         }
+    }
+
+    /**
+     * 分享到好友会话。
+     *
+     * @param activity [Context]
+     * @param fileList 图片列表。
+     * @param text 分享文本。
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun shareToSessionByFile(activity: Activity, fileList: List<File>, text: String = "") {
+        activity.runOnUiThread {
+            if (checkShareEnable(activity)) {
+                internalShareToSession(activity, fileList, text)
+            }
+        }
+    }
+
+    private fun internalShareToSession(activity: Activity, fileList: List<File>, text: String = "") {
+        if (!TextUtils.isEmpty(text)) {
+            ClipboardUtil.setPrimaryClip(activity, "", text)
+            Toast.makeText(activity, "请长按粘贴内容", Toast.LENGTH_LONG).show()
+        }
+        openShareImgUI(activity, text, fileList.map { Uri.fromFile(it) })
     }
 
     /**
@@ -139,20 +158,31 @@ object WXShareMultiImageHelper {
     @JvmOverloads
     fun shareToTimeline(activity: Activity, imageList: List<Bitmap>, options: Options = Options()) {
         activity.runOnUiThread {
-            if (!options.isAutoFill) {
-                internalShareToTimeline(activity, imageList, options)
-            } else if (isServiceEnabled(activity)) {
-                internalShareToTimeline(activity, imageList, options)
-            } else {
-                showOpenServiceDialog(
-                        activity,
-                        {
-                            openService(activity) {
-                                internalShareToTimeline(activity, imageList, options.apply { isAutoFill = it })
-                            }
-                        },
-                        { internalShareToTimeline(activity, imageList, options.apply { isAutoFill = false }) }
-                )
+            if (checkShareEnable(activity)) {
+                clearTmpFile(activity)
+                val dir = getTmpFileDir(activity)
+                val fileList = imageList.map { File(saveBitmap(dir, it)) }
+                internalShareToTimeline(activity, fileList, options)
+            }
+        }
+    }
+
+    /**
+     * 分享到朋友圈。
+     *
+     * @param activity [Context]
+     * @param fileList 图片列表。
+     * @param options [Options] 可选项。
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun shareToTimelineByFile(activity: Activity, fileList: List<File>, options: Options = Options()) {
+        activity.runOnUiThread {
+            if (checkShareEnable(activity)) {
+                clearTmpFile(activity)
+                val dir = getTmpFileDir(activity)
+                val copyFileList = fileList.map { it.copyTo(File(dir, it.name), true) }
+                internalShareToTimeline(activity, copyFileList, options)
             }
         }
     }
@@ -178,16 +208,11 @@ object WXShareMultiImageHelper {
      * 分享到微信朋友圈。
      *
      * @param activity [Context]
-     * @param imageList 图片列表。
+     * @param fileList 图片列表。
      * @param options [Options] 可选项。
      */
-    private fun internalShareToTimeline(activity: Activity, imageList: List<Bitmap>, options: Options) {
-
-        activity.runOnUiThread {
-            if (!checkShareEnable(activity)) {
-                return@runOnUiThread
-            }
-
+    private fun internalShareToTimeline(activity: Activity, fileList: List<File>, options: Options) {
+        fun share() {
             var dialog: ProgressDialog? = null
             if (options.needShowLoading) {
                 dialog = ProgressDialog(activity).apply {
@@ -198,12 +223,8 @@ object WXShareMultiImageHelper {
             }
 
             thread(true) {
-
-                clearTmpFile(activity)
-
-                // 保存图片
-                val dir = getTmpFileDir(activity)
-                val paths = imageList.reversed().map { saveBitmap(dir, it) }.toTypedArray()
+                // 获取图片路径
+                val paths = fileList.reversed().map { it.absolutePath }.toTypedArray()
                 val mimeTypes = Array(paths.size) { "image/*" }
                 // 扫描图片
                 val uriList = mutableListOf<Uri>()
@@ -222,11 +243,27 @@ object WXShareMultiImageHelper {
                         }
                     }
                 }
-
             }
-
         }
-
+        if (!options.isAutoFill) {
+            share()
+        } else if (isServiceEnabled(activity)) {
+            share()
+        } else {
+            showOpenServiceDialog(
+                    activity,
+                    {
+                        openService(activity) {
+                            options.apply { isAutoFill = it }
+                            share()
+                        }
+                    },
+                    {
+                        options.apply { isAutoFill = false }
+                        share()
+                    }
+            )
+        }
     }
 
     // 分享到微信朋友圈（自动模式）。
