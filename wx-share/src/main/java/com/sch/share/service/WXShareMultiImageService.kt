@@ -7,7 +7,6 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.EditText
 import android.widget.GridView
-import android.widget.ListView
 import com.sch.share.ShareInfo
 import com.sch.share.utils.ClipboardUtil
 import java.util.*
@@ -61,7 +60,10 @@ class WXShareMultiImageService : AccessibilityService() {
             AccessibilityEvent.TYPE_VIEW_SCROLLED,
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
                 when (event.className.toString()) {
-                    ListView::class.java.name -> openAlbum(event)
+                    "android.widget.ListView",
+                    "android.support.v7.widget.RecyclerView",
+                    "androidx.recyclerview.widget.RecyclerView" ->
+                        openAlbum(event)
                 }
             }
             else -> {
