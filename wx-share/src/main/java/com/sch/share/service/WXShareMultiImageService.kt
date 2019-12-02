@@ -1,4 +1,4 @@
-package com.sch.share
+package com.sch.share.service
 
 import android.accessibilityservice.AccessibilityService
 import android.view.View
@@ -8,6 +8,7 @@ import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.EditText
 import android.widget.GridView
 import android.widget.ListView
+import com.sch.share.ShareInfo
 import com.sch.share.utils.ClipboardUtil
 import java.util.*
 

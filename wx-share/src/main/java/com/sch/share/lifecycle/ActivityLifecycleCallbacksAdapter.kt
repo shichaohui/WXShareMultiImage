@@ -1,4 +1,4 @@
-package com.sch.share
+package com.sch.share.lifecycle
 
 import android.app.Activity
 import android.app.Application

@@ -2,18 +2,22 @@ package com.sch.share.demo
 
 import android.Manifest
 import android.app.ProgressDialog
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
+import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.ImageView
+import com.sch.share.Options
 import com.sch.share.WXShareMultiImageHelper
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.File
 import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
@@ -46,10 +50,14 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    // 是否有存储权限。
+    private fun hasStoragePermission(): Boolean {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+    }
+
     private fun requestStoragePermission() {
-        // 申请内存权限。
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                !WXShareMultiImageHelper.hasStoragePermission(this)) {
+        // 申请存储权限。
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !hasStoragePermission()) {
             requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 1)
         }
     }
@@ -83,21 +91,21 @@ class MainActivity : AppCompatActivity() {
     // 分享到朋友圈。
     private fun shareToTimeline() {
         share {
-            val options = WXShareMultiImageHelper.Options().apply {
+            val options = Options().apply {
                 text = tvShareContent.text.toString()
             }
-            WXShareMultiImageHelper.shareToTimeline(this, it.toMutableList(), options)
+            WXShareMultiImageHelper.shareToTimeline(this, it, options)
         }
     }
 
-    private fun share(realShare: (List<Bitmap>) -> Unit) {
+    private fun share(realShare: (Array<Bitmap>) -> Unit) {
         val dialog = ProgressDialog(this)
         dialog.setMessage("正在加载图片...")
         dialog.show()
         thread(true) {
             val bitmapList = imageList.map { BitmapFactory.decodeResource(resources, it) }
             runOnUiThread { dialog.cancel() }
-            realShare(bitmapList)
+            realShare(bitmapList.toTypedArray())
         }
     }
 

@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 
     <application>
-        <service android:name=".WXShareMultiImageService"
+        <service android:name=".service.WXShareMultiImageService"
                  android:label="@string/wx_share_multi_image_service_label"
                  android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>

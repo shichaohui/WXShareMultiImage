@@ -13,7 +13,7 @@ internal object ShareInfo {
     /**
      * 分享的可选项配置
      */
-    var options = WXShareMultiImageHelper.Options()
+    var options = Options()
 
     /**
      * 是否有待分享文本
