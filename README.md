@@ -4,10 +4,6 @@
 
 [ ![Download](https://api.bintray.com/packages/shichaohui/maven/wx-share/images/download.svg) ](https://bintray.com/shichaohui/maven/wx-share/_latestVersion)
 
-> v1.0.8 开始新增朋友圈自动发表的功能，优化了 API `shareToTimeline()` 的传参方式，具体内容请继续看本文档。
->
-> 如果不使用新版本，请查看 [v1.0.7 文档](./README_highest_v1.0.7.md) 。
-
 ## 功能
 
 * 分享多图+文字给好友。
@@ -18,7 +14,7 @@
 ## Gradle 依赖
 
 ```groovy
-implementation 'com.sch.share:wx-share:1.0.10'
+implementation 'com.sch.share:wx-share:1.1.0'
 ```
 
 ## 配置
@@ -58,7 +54,7 @@ WXShareMultiImageHelper.shareToSession(activity, bitmapList, text)
 // 仅分享图片
 WXShareMultiImageHelper.shareToTimeline(activity, bitmapList)
 
-// 分享图片和文字，并设置本次分享是否，是否自动发布
+// 分享图片和文字，并设置本次分享是否自动发布
 val options = WXShareMultiImageHelper.Options().apply {
     text = "待分享文案"
     isAutoFill = true
@@ -112,7 +108,7 @@ WXShareMultiImageHelper.openService(activity) {
 
 ```java
 // Java
-WXShareMultiImageHelper.openService(activity, new WXShareMultiImageHelper.OnOpenServiceListener() {
+WXShareMultiImageHelper.openService(activity, new ServiceManager.OnOpenServiceListener() {
     @Override
     public void onResult(boolean isOpen) {
         // do something.
