@@ -95,9 +95,6 @@ class WXShareMultiImageService : AccessibilityService() {
         }
         if (!ShareInfo.hasText()) {
             return
-        }
-        if (ClipboardUtil.getPrimaryClip(this) != ShareInfo.options.text) {
-            return
         } else {
             ShareInfo.options.text = ""
         }
