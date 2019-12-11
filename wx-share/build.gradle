@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 def mVersionCode = 11
-def mVersionName = "1.1.0"
+def mVersionName = "1.1.1"
 
 android {
     compileSdkVersion 28
