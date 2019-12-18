@@ -59,11 +59,8 @@ class WXShareMultiImageService : AccessibilityService() {
             AccessibilityEvent.TYPE_VIEW_FOCUSED,
             AccessibilityEvent.TYPE_VIEW_SCROLLED,
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                when (event.className.toString()) {
-                    "android.widget.ListView",
-                    "android.support.v7.widget.RecyclerView",
-                    "androidx.recyclerview.widget.RecyclerView" ->
-                        openAlbum(event)
+                if(event.className.contains("(?:ListView|RecyclerView)$".toRegex())) {
+                    openAlbum(event)
                 }
             }
             else -> {
