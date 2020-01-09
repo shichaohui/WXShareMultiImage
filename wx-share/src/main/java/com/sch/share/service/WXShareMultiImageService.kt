@@ -1,14 +1,11 @@
 package com.sch.share.service
 
 import android.accessibilityservice.AccessibilityService
-import android.view.View
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.EditText
-import android.widget.GridView
 import com.sch.share.ShareInfo
-import com.sch.share.utils.ClipboardUtil
 import java.util.*
 
 private const val SNS_UPLOAD_UI = "com.tencent.mm.plugin.sns.ui.SnsUploadUI"
@@ -24,12 +21,22 @@ private const val DONE_EN = "Done"
 private const val POST_ZH = "发表"
 private const val POST_EN = "Post"
 
+
 /**
  * Created by StoneHui on 2018/10/22.
  * <p>
  * 微信多图分享服务。
  */
 class WXShareMultiImageService : AccessibilityService() {
+
+    // ListView 或者 RecyclerView
+    private  val lvOrRcvRegex = "(?:\\.ListView|\\.RecyclerView)$".toRegex()
+    // GridView 或者 RecyclerView
+    private  val gvOrRcvRegex = "(?:\\.GridView|\\.RecyclerView)$".toRegex()
+    // EditText
+    private  val etRegex= EditText::class.java.name.toRegex()
+    // View 或者 CheckBox
+    private  val vOrCbRegex= "(?:\\.View|\\.CheckBox)$".toRegex()
 
     private var textFlag = 0
     private var prepareOpenAlbumFlag = 0
@@ -59,7 +66,7 @@ class WXShareMultiImageService : AccessibilityService() {
             AccessibilityEvent.TYPE_VIEW_FOCUSED,
             AccessibilityEvent.TYPE_VIEW_SCROLLED,
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                if(event.className.contains("(?:ListView|RecyclerView)$".toRegex())) {
+                if(event.className.contains(lvOrRcvRegex)) {
                     openAlbum(event)
                 }
             }
@@ -95,7 +102,7 @@ class WXShareMultiImageService : AccessibilityService() {
         } else {
             ShareInfo.options.text = ""
         }
-        rootNodeInfo.getChild(EditText::class.java.name)?.run {
+        rootNodeInfo.getChild(etRegex)?.run {
             // 粘贴剪切板内容
             performAction(AccessibilityNodeInfo.ACTION_FOCUS)
             performAction(AccessibilityNodeInfo.ACTION_PASTE)
@@ -113,7 +120,7 @@ class WXShareMultiImageService : AccessibilityService() {
             prepareOpenAlbumFlag = rootNodeInfo.hashCode()
         }
         // 自动点击添加图片的按钮。
-        rootNodeInfo.getChild(GridView::class.java.name)
+        rootNodeInfo.getChild(gvOrRcvRegex)
                 ?.getChild(1)
                 ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
@@ -123,15 +130,15 @@ class WXShareMultiImageService : AccessibilityService() {
         if (ShareInfo.waitingImageCount <= 0) {
             return
         }
-        val listView = event.source
-        if (listView == null || openAlbumFlag == listView.hashCode()) {
+        val sourceView = event.source
+        if (sourceView == null || openAlbumFlag == sourceView.hashCode()) {
             return
         } else {
-            openAlbumFlag = listView.hashCode()
+            openAlbumFlag = sourceView.hashCode()
         }
         // 查找从相册选择选项并点击。
-        for (i in (0 until listView.childCount)) {
-            val child = listView.getChild(i) ?: continue
+        for (i in (0 until sourceView.childCount)) {
+            val child = sourceView.getChild(i) ?: continue
             if (child.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_ZH).isNotEmpty() ||
                     child.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_EN_2).isNotEmpty() ||
                     child.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_EN).isNotEmpty()
@@ -148,11 +155,11 @@ class WXShareMultiImageService : AccessibilityService() {
             return
         }
         val rootNodeInfo = getRootNodeInfo() ?: return
-        val gridView = rootNodeInfo.getChild(GridView::class.java.name) ?: return
+        val targetView = rootNodeInfo.getChild(gvOrRcvRegex) ?: return
 
         val maxIndex = ShareInfo.selectedImageCount + ShareInfo.waitingImageCount - 1
         (ShareInfo.selectedImageCount..maxIndex)
-                .map { gridView.getChild(it).getChild(View::class.java.name) }
+                .map { targetView.getChild(it).getChild(vOrCbRegex) }
                 .forEach { it?.performAction(AccessibilityNodeInfo.ACTION_CLICK) }
 
         // 选图结束。
@@ -189,7 +196,7 @@ class WXShareMultiImageService : AccessibilityService() {
     }
 
     // 查找指定类名的节点。
-    private fun AccessibilityNodeInfo.getChild(className: String): AccessibilityNodeInfo? {
+    private fun AccessibilityNodeInfo.getChild(className: Regex): AccessibilityNodeInfo? {
         val queue = LinkedList<AccessibilityNodeInfo>()
         queue.offer(this)
         var info: AccessibilityNodeInfo?

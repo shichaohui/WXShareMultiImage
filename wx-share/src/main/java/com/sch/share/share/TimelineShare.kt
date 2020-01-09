@@ -137,7 +137,11 @@ object TimelineShare : BaseShare() {
         intent.action = Intent.ACTION_SEND
         intent.component = ComponentName(WX_PACKAGE_NAME, WX_SHARE_TO_TIMELINE_UI)
         intent.type = "image/*"
-        intent.putExtra("Kdescription", options.text)
+        /*
+         * 新版微信会把 Kdescription 参数显示到分享输入框中。
+         * 为兼容新旧版本，这里不传文本了，统一使用剪切板粘贴。
+         * intent.putExtra("Kdescription", options.text)
+         */
         intent.putExtra(Intent.EXTRA_STREAM, uriList[0])
         (context as Activity).startActivity(intent)
     }
