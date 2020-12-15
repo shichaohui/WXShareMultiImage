@@ -14,7 +14,7 @@
 ## Gradle 依赖
 
 ```groovy
-implementation 'com.sch.share:wx-share:1.1.3'
+implementation 'com.sch.share:wx-share:1.1.4'
 ```
 
 ## 配置
