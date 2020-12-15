@@ -3,7 +3,7 @@ package com.sch.share.share
 import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
-import android.support.v4.content.ContextCompat
+import androidx.core.content.ContextCompat
 import android.widget.Toast
 import com.sch.share.utils.WXDetectUtil
 
