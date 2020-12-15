@@ -3,7 +3,7 @@ package com.sch.share
 import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
-import com.sch.share.manager.FileManager
+import com.sch.share.manager.ImageManager
 import com.sch.share.service.ServiceManager
 import com.sch.share.share.SessionShare
 import com.sch.share.share.TimelineShare
@@ -73,7 +73,7 @@ object WXShareMultiImageHelper {
      */
     @JvmStatic
     fun clearTmpFile(context: Context) {
-        FileManager.clearTmpFile(context)
+        ImageManager.clear(context)
     }
 
     /**
