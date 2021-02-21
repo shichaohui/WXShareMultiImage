@@ -167,7 +167,7 @@ AlertDialog.Builder(context)
 ```
 
 <div>
-    <img src="https://shichaohui.github.io/images/wechat-appreciate-code.png" width="33.33%"/>
-    <img src="https://shichaohui.github.io/images/wechat-appreciate-code.png" width="33.33%"/>
-    <img src="https://shichaohui.github.io/images/wechat-appreciate-code.png" width="33.33%"/>
+    <img src="https://shichaohui.github.io/images/wechat-appreciate-code.png" width="33%"/>
+    <img src="https://shichaohui.github.io/images/wechat-appreciate-code.png" width="33%"/>
+    <img src="https://shichaohui.github.io/images/wechat-appreciate-code.png" width="33%"/>
 </div>
