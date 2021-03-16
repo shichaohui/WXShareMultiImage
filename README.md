@@ -166,8 +166,7 @@ AlertDialog.Builder(context)
  See the License for the specific language governing permissions and limitations under the License.
 ```
 
-<div>
-    <img src="https://shichaohui.github.io/images/wechat-appreciate-code.png" width="33%"/>
-    <img src="https://shichaohui.github.io/images/wechat-appreciate-code.png" width="33%"/>
-    <img src="https://shichaohui.github.io/images/wechat-appreciate-code.png" width="33%"/>
-</div>
+## 赏
+
+| <img src="https://shichaohui.github.io/images/wechat-appreciate-code.png"/> | <img src="https://shichaohui.github.io/images/wechat-appreciate-code.png"/> | <img src="https://shichaohui.github.io/images/wechat-appreciate-code.png"/> |
+|  ----  | ----  | ----  |
