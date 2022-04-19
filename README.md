@@ -13,18 +13,18 @@
 
 ## Gradle 依赖
 
-**Step 1. Add the JitPack repository to your project build file.**
+**添加 `jitpack` 仓库到项目的 `build.gradle` 文件中**
 
 ```groovy
 allprojects {
     repositories {
       ...
-	  maven { url 'https://jitpack.io' }
+      maven { url 'https://jitpack.io' }
     }
 }
 ```
 
-**Step 2. Add the dependency to your application build file.**
+**添加 `WXShareMultiImage` 依赖到应用的 `build.gradle` 文件中**
 
 ```groovy
 implementation 'com.github.shichaohui:WXShareMultiImage:2.0.0'
