@@ -2,7 +2,7 @@
 
 基于无障碍服务实现微信多图分享。
 
-[ ![Download](https://api.bintray.com/packages/shichaohui/maven/wx-share/images/download.svg) ](https://bintray.com/shichaohui/maven/wx-share/_latestVersion)
+[ ![Download](https://jitpack.io/v/shichaohui/WXShareMultiImage.svg) ](https://jitpack.io/#shichaohui/WXShareMultiImage)
 
 ## 功能
 
@@ -13,8 +13,21 @@
 
 ## Gradle 依赖
 
+**Step 1. Add the JitPack repository to your project build file.**
+
 ```groovy
-implementation 'com.sch.share:wx-share:1.1.4'
+allprojects {
+    repositories {
+      ...
+	  maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+**Step 2. Add the dependency to your application build file.**
+
+```groovy
+implementation 'com.github.shichaohui:WXShareMultiImage:2.0.0'
 ```
 
 ## 配置

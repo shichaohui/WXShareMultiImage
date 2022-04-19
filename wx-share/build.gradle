@@ -1,8 +1,8 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'com.github.dcendents.android-maven'
 
-def mVersionCode = 14
-def mVersionName = "1.1.4"
+group='com.github.shichaohui'
 
 android {
     compileSdkVersion 28
@@ -10,8 +10,8 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode mVersionCode
-        versionName mVersionName
+        versionCode 200
+        versionName "2.0.0"
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
@@ -35,17 +35,3 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
-
-// ./gradlew clean build bintrayUpload -PbintrayUser=shichaohui -PbintrayKey=xxx -PdryRun=false
-apply plugin: "guru.stefma.bintrayrelease"
-version = mVersionName
-group = "com.sch.share"
-androidArtifact {
-    artifactId = "wx-share"
-}
-publish {
-    userOrg = 'shichaohui'
-    desc = '微信分享多图'
-    website = 'https://github.com/shichaohui/WXShareMultiImage.git'
-}
-tasks.getByPath(":wx-share:dokka").enabled = false
