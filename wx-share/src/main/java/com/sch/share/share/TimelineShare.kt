@@ -117,19 +117,8 @@ object TimelineShare : BaseShare() {
             ClipboardUtil.setPrimaryClip(context, "", options.text)
         }
         ShareInfo.options = options
-        ShareInfo.setImageCount(1, uriList.size - 1)
-        // 打开分享到朋友圈界面
-        val intent = Intent()
-        intent.action = Intent.ACTION_SEND
-        intent.component = ComponentName(WX_PACKAGE_NAME, WX_SHARE_TO_TIMELINE_UI)
-        intent.type = "image/*"
-        /*
-         * 新版微信会把 Kdescription 参数显示到分享输入框中。
-         * 为兼容新旧版本，这里不传文本了，统一使用剪切板粘贴。
-         * intent.putExtra("Kdescription", options.text)
-         */
-        intent.putExtra(Intent.EXTRA_STREAM, uriList[0])
-        (context as Activity).startActivity(intent)
+        ShareInfo.setImageCount(0, uriList.size)
+        openWeiXin(context)
     }
 
     // 分享到微信朋友圈（手动模式）。
@@ -140,12 +129,17 @@ object TimelineShare : BaseShare() {
         } else {
             Toast.makeText(context, "请手动选择图片！", Toast.LENGTH_LONG).show()
         }
-        // 打开微信
+        openWeiXin(context)
+    }
+
+    // 打开微信
+    private fun openWeiXin(context: Context) {
         val intent = Intent(Intent.ACTION_MAIN)
         intent.action = Intent.ACTION_MAIN
         intent.component = ComponentName(WX_PACKAGE_NAME, WX_LAUNCHER_UI)
         intent.addCategory(Intent.CATEGORY_LAUNCHER)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         context.startActivity(intent)
     }
 

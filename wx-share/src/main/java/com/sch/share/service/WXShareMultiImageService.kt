@@ -6,21 +6,25 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.EditText
 import com.sch.share.ShareInfo
+import com.sch.share.utils.EasyTimer
 import java.util.*
 
-private const val SNS_UPLOAD_UI = "com.tencent.mm.plugin.sns.ui.SnsUploadUI"
+private const val LAUNCHER_UI = "com.tencent.mm.ui.LauncherUI"
+private const val TIMELINE_UI = "com.tencent.mm.plugin.sns.ui.SnsTimeLineUI"
+private const val UPLOAD_UI = "com.tencent.mm.plugin.sns.ui.SnsUploadUI"
 private const val ALBUM_PREVIEW_UI = "com.tencent.mm.plugin.gallery.ui.AlbumPreviewUI"
 
-private const val SELECT_FROM_ALBUM_ZH = "从相册选择"
-private const val SELECT_FROM_ALBUM_EN = "Select Photos or Videos from Album"
-private const val SELECT_FROM_ALBUM_EN_2 = "Choose from Album"
+private val DISCOVER_TEXT_LIST = arrayOf("发现", "Discover")
+private val TIMELINE_TEXT_LIST = arrayOf("朋友圈", "Moments")
+private val SHARE_TEXT_LIST = arrayOf("拍照分享", "")
+private val SELECT_FROM_ALBUM_TEXT_LIST = arrayOf(
+    "从相册选择", "Select Photos or Videos from Album", "Choose from Album"
+)
+private val POST_TEXT_LIST = arrayOf("发表", "Post")
 
-private const val DONE_ZH = "完成"
-private const val DONE_EN = "Done"
-
-private const val POST_ZH = "发表"
-private const val POST_EN = "Post"
-
+enum class Step {
+    Idle, Launcher, Discover, Timeline, PrepareAlbum, AlbumPreview, Upload
+}
 
 /**
  * Created by StoneHui on 2018/10/22.
@@ -29,45 +33,43 @@ private const val POST_EN = "Post"
  */
 class WXShareMultiImageService : AccessibilityService() {
 
-    // ListView 或者 RecyclerView
-    private  val lvOrRcvRegex = "(?:\\.ListView|\\.RecyclerView)$".toRegex()
     // GridView 或者 RecyclerView
-    private  val gvOrRcvRegex = "(?:\\.GridView|\\.RecyclerView)$".toRegex()
-    // EditText
-    private  val etRegex= EditText::class.java.name.toRegex()
-    // View 或者 CheckBox
-    private  val vOrCbRegex= "(?:\\.View|\\.CheckBox)$".toRegex()
+    private val gvOrRcvRegex = "(?:\\.GridView|\\.RecyclerView)$".toRegex()
 
-    private var textFlag = 0
-    private var prepareOpenAlbumFlag = 0
-    private var openAlbumFlag = 0
-    private var postFlag = 0
+    // EditText
+    private val etRegex = EditText::class.java.name.toRegex()
+
+    // View 或者 CheckBox
+    private val vOrCbRegex = "(?:\\.View|\\.CheckBox)$".toRegex()
+
+    // Button
+    private val btnRegex = "(?:\\.AppCompatButton|\\.Button)$".toRegex()
+
+    // 当前步骤
+    private var step = Step.Launcher
 
     // 当窗口发生的事件是我们配置监听的事件时,会回调此方法.会被调用多次
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-
         if (!ShareInfo.options.isAutoFill) {
             return
         }
-
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 when (event.className.toString()) {
-                    SNS_UPLOAD_UI -> {
-                        processingSnsUploadUI(event)
-                    }
-                    ALBUM_PREVIEW_UI -> {
-                        selectImage(event)
-                    }
+                    LAUNCHER_UI -> processLauncherUI()
+                    TIMELINE_UI -> prepareGoIntoAlbum()
+                    ALBUM_PREVIEW_UI -> selectImage()
+                    UPLOAD_UI -> processingUploadUI()
                     else -> {
                     }
                 }
             }
-            AccessibilityEvent.TYPE_VIEW_FOCUSED,
-            AccessibilityEvent.TYPE_VIEW_SCROLLED,
-            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                if(event.className.contains(lvOrRcvRegex)) {
-                    openAlbum(event)
+            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
+                when (step) {
+                    Step.Discover -> goIntoTimeline()
+                    Step.PrepareAlbum -> goIntoAlbum()
+                    else -> {
+                    }
                 }
             }
             else -> {
@@ -76,126 +78,159 @@ class WXShareMultiImageService : AccessibilityService() {
 
     }
 
-    // 处理图文分享界面。
-    private fun processingSnsUploadUI(event: AccessibilityEvent) {
-
-        val rootNodeInfo = getRootNodeInfo() ?: return
-
-        setTextToUI(rootNodeInfo)
-
-        if (ShareInfo.waitingImageCount > 0) {
-            prepareOpenAlbum(rootNodeInfo)
-        } else if (ShareInfo.options.isAutoPost) {
-            post(rootNodeInfo)
+    // 处理启动页
+    private fun processLauncherUI() {
+        if (ShareInfo.waitingImageCount <= 0) {
+            step = Step.Idle
+        } else {
+            step = Step.Launcher
+            goIntoDiscover()
         }
     }
 
-    // 显示待分享文字。
-    private fun setTextToUI(rootNodeInfo: AccessibilityNodeInfo) {
-        if (textFlag == rootNodeInfo.hashCode()) {
+    // 进入发现页
+    private fun goIntoDiscover() {
+        if (step !== Step.Launcher) {
             return
-        } else {
-            textFlag = rootNodeInfo.hashCode()
         }
-        if (!ShareInfo.hasText()) {
+        EasyTimer.schedule(200) {
+            step = Step.Discover
+            getRootNodeInfo()?.clickNodeByText(DISCOVER_TEXT_LIST, 2)
+        }
+    }
+
+    // 进入朋友圈
+    private fun goIntoTimeline() {
+        if (step !== Step.Discover) {
             return
-        } else {
+        }
+        EasyTimer.schedule(200) {
+            step = Step.Timeline
+            getRootNodeInfo()?.clickNodeByText(TIMELINE_TEXT_LIST, 8)
+        }
+    }
+
+    // 准备进入相册
+    private fun prepareGoIntoAlbum() {
+        if (step !== Step.Timeline) {
+            return
+        }
+        EasyTimer.schedule(200) {
+            step = Step.PrepareAlbum
+            getRootNodeInfo()?.clickNodeByText(SHARE_TEXT_LIST)
+        }
+    }
+
+    // 进入相册
+    private fun goIntoAlbum() {
+        if (step !== Step.PrepareAlbum) {
+            return
+        }
+        EasyTimer.schedule(200) {
+            step = Step.AlbumPreview
+            getRootNodeInfo()?.clickNodeByText(SELECT_FROM_ALBUM_TEXT_LIST, 3)
+        }
+    }
+
+    // 选择图片
+    private fun selectImage() {
+        if (step !== Step.AlbumPreview) {
+            return
+        }
+        EasyTimer.schedule(200) {
+            val rootNodeInfo = getRootNodeInfo() ?: return@schedule
+            val targetView = rootNodeInfo.getChild(gvOrRcvRegex) ?: return@schedule
+            // 选图
+            val maxIndex = ShareInfo.selectedImageCount + ShareInfo.waitingImageCount - 1
+            (ShareInfo.selectedImageCount..maxIndex).forEach {
+                targetView.getChild(it).clickNodeByClassName(vOrCbRegex)
+            }
+            // 选图结束
+            selectImageFinished()
+        }
+    }
+
+    // 选择图片完成
+    private fun selectImageFinished() {
+        ShareInfo.setImageCount(0, 0)
+        EasyTimer.schedule(200) {
+            step = Step.Upload
+            getRootNodeInfo()?.clickNodeByClassName(btnRegex)
+        }
+    }
+
+    // 处理图文分享界面
+    private fun processingUploadUI() {
+        if (step !== Step.Upload) {
+            return
+        }
+        val rootNodeInfo = getRootNodeInfo()
+        if (rootNodeInfo === null) {
+            step = Step.Idle
+            return
+        }
+        // 粘贴待分享文案
+        if (ShareInfo.options.text.isNotEmpty()) {
             ShareInfo.options.text = ""
-        }
-        rootNodeInfo.getChild(etRegex)?.run {
-            // 粘贴剪切板内容
-            performAction(AccessibilityNodeInfo.ACTION_FOCUS)
-            performAction(AccessibilityNodeInfo.ACTION_PASTE)
-        }
-    }
-
-    // 准备打开相册
-    private fun prepareOpenAlbum(rootNodeInfo: AccessibilityNodeInfo) {
-        if (ShareInfo.waitingImageCount <= 0) {
-            return
-        }
-        if (prepareOpenAlbumFlag == rootNodeInfo.hashCode()) {
-            return
-        } else {
-            prepareOpenAlbumFlag = rootNodeInfo.hashCode()
-        }
-        // 自动点击添加图片的按钮。
-        rootNodeInfo.getChild(gvOrRcvRegex)
-                ?.getChild(1)
-                ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-    }
-
-    // 打开相册。
-    private fun openAlbum(event: AccessibilityEvent) {
-        if (ShareInfo.waitingImageCount <= 0) {
-            return
-        }
-        val sourceView = event.source
-        if (sourceView == null || openAlbumFlag == sourceView.hashCode()) {
-            return
-        } else {
-            openAlbumFlag = sourceView.hashCode()
-        }
-        // 查找从相册选择选项并点击。
-        for (i in (0 until sourceView.childCount)) {
-            val child = sourceView.getChild(i) ?: continue
-            if (child.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_ZH).isNotEmpty() ||
-                    child.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_EN_2).isNotEmpty() ||
-                    child.findAccessibilityNodeInfosByText(SELECT_FROM_ALBUM_EN).isNotEmpty()
-            ) {
-                child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                break
+            rootNodeInfo.getChild(etRegex)?.run {
+                performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+                performAction(AccessibilityNodeInfo.ACTION_PASTE)
             }
         }
-    }
-
-    // 选择图片。
-    private fun selectImage(event: AccessibilityEvent) {
-        if (ShareInfo.waitingImageCount <= 0) {
-            return
+        // 发表
+        if (ShareInfo.options.isAutoPost) {
+            ShareInfo.options.isAutoPost = false
+            EasyTimer.schedule(200) {
+                rootNodeInfo.clickNodeByText(POST_TEXT_LIST)
+            }
         }
-        val rootNodeInfo = getRootNodeInfo() ?: return
-        val targetView = rootNodeInfo.getChild(gvOrRcvRegex) ?: return
-
-        val maxIndex = ShareInfo.selectedImageCount + ShareInfo.waitingImageCount - 1
-        (ShareInfo.selectedImageCount..maxIndex)
-                .map { targetView.getChild(it).getChild(vOrCbRegex) }
-                .forEach { it?.performAction(AccessibilityNodeInfo.ACTION_CLICK) }
-
-        // 选图结束。
-        ShareInfo.setImageCount(0, 0)
-
-        // 点击完成按钮。
-        rootNodeInfo.findAccessibilityNodeInfosByText(DONE_ZH)
-                .getOrElse(0) { rootNodeInfo.findAccessibilityNodeInfosByText(DONE_EN).getOrNull(0) }
-                ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        step = Step.Idle
     }
 
-    // 发布
-    private fun post(rootNodeInfo: AccessibilityNodeInfo) {
-        if (postFlag == rootNodeInfo.hashCode()) {
-            return
-        } else {
-            postFlag = rootNodeInfo.hashCode()
+    /**
+     * 点击指定文案的节点
+     * @param textList 选文案列表，按顺序查找，找到即停止查找
+     * @param parentCount 0 表示点击查找到的节点，大于 0 表示点击向上查找指定层级的父节点
+     */
+    private fun AccessibilityNodeInfo.clickNodeByText(
+        textList: Array<String>,
+        parentCount: Int = 0
+    ) {
+        var node = getNodeByText(textList)
+        repeat(parentCount) {
+            node = node?.parent
         }
-        // 准备发布
-        ShareInfo.options.isAutoPost = false
-        // 点击发表按钮。
-        rootNodeInfo.findAccessibilityNodeInfosByText(POST_ZH)
-                .getOrElse(0) { rootNodeInfo.findAccessibilityNodeInfosByText(POST_EN).getOrNull(0) }
-                ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        node?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
-    // 查找指定类名的父节点。
-    private fun AccessibilityNodeInfo.getParent(parentClassName: String): AccessibilityNodeInfo? {
-        return when {
-            parent == null -> null
-            parent.className == parentClassName -> parent
-            else -> parent.getParent(parentClassName)
+    /**
+     * 点击指定类名的节点
+     * @param className 类名正则
+     */
+    private fun AccessibilityNodeInfo.clickNodeByClassName(className: Regex) {
+        this.getChild(className)?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
+    /**
+     * 查找指定文案的节点
+     * @param textList 备选文案列表，按顺序查找，找到即停止查找
+     * @return 对应的节点或者 null
+     */
+    private fun AccessibilityNodeInfo.getNodeByText(textList: Array<String>): AccessibilityNodeInfo? {
+        var node: AccessibilityNodeInfo? = null
+        var index = 0
+        while (index < textList.size && node === null) {
+            node = this.findAccessibilityNodeInfosByText(textList[index]).getOrNull(0)
+            index++
         }
+        return node
     }
 
-    // 查找指定类名的节点。
+    /**
+     * 查找指定类名的节点
+     * @param className 类名正则
+     * @return 对应的节点或者 null
+     */
     private fun AccessibilityNodeInfo.getChild(className: Regex): AccessibilityNodeInfo? {
         val queue = LinkedList<AccessibilityNodeInfo>()
         queue.offer(this)
@@ -215,13 +250,7 @@ class WXShareMultiImageService : AccessibilityService() {
         return null
     }
 
-    // 获取最后一个子节点。
-    private fun AccessibilityNodeInfo.getLastChild(): AccessibilityNodeInfo? {
-        return if (childCount <= 0) null else getChild(childCount - 1)
-
-    }
-
-    // 获取 APPLICATION 的 Window 根节点。
+    // 获取 APPLICATION 的 Window 根节点
     private fun getRootNodeInfo(): AccessibilityNodeInfo? {
         var rootNodeInfo: AccessibilityNodeInfo? = null
         for (window in windows) {
