@@ -27,7 +27,7 @@ allprojects {
 **添加 `WXShareMultiImage` 依赖到应用的 `build.gradle` 文件中**
 
 ```groovy
-implementation 'com.github.shichaohui:WXShareMultiImage:v2.0.0'
+implementation 'com.github.shichaohui:WXShareMultiImage:v2.0.1'
 ```
 
 ## 配置
